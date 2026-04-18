@@ -1,0 +1,1987 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphify — 知识图谱</title>
+    <link rel="stylesheet" href="vis-network.min.css">
+    <!-- Linear Design System: Inter Variable with OpenType features -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;510;590&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           Linear Design System Implementation
+           Ultra-minimal dark-mode, precision engineered
+        ======================================== */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-feature-settings: "cv01", "ss03";  /* Linear's signature OpenType */
+            background: #08090a;  /* Marketing black */
+            color: #f7f8f8;  /* Primary text - not pure white */
+            min-height: 100vh;
+            padding: 32px;
+            line-height: 1.5;
+            letter-spacing: -0.011em;  /* Subtle compression */
+        }
+        
+        .workspace {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 16px;
+        }
+        
+        /* Sidebar: Tools Panel */
+        .sidebar {
+            width: 64px;
+            background: #0f1011;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 12px 8px;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            color: #8a8f98;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 9px;
+            font-weight: 510;
+            transition: all 0.15s ease;
+            line-height: 1.2;
+        }
+        
+        .sidebar-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: #f7f8f8;
+            border-color: rgba(255,255,255,0.12);
+        }
+        
+        .sidebar-btn.active {
+            background: #5e6ad2;
+            color: #fff;
+            border-color: #5e6ad2;
+        }
+        
+        .sidebar-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        /* Header: Panel Dark (#0f1011) */
+        .header {
+            background: #0f1011;
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);  /* Whisper-thin border */
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .search-container {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 8px 16px 8px 40px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            color: #f7f8f8;
+            font-size: 13px;
+            font-weight: 510;
+            font-feature-settings: "cv01", "ss03";
+            outline: none;
+            transition: background 0.15s ease;
+        }
+        
+        #searchInput:focus {
+            background: rgba(255,255,255,0.05);
+            border-color: #5e6ad2;  /* Brand indigo focus */
+        }
+        
+        #searchInput::placeholder {
+            color: #62666d;  /* Quaternary text */
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a8f98;
+            font-size: 14px;
+        }
+        
+        /* Filter Buttons: Ghost/Subtle style */
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            color: #d0d6e0;
+            font-size: 12px;
+            font-weight: 510;
+            font-feature-settings: "cv01", "ss03";
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: #f7f8f8;
+        }
+        
+        .filter-btn.active {
+            background: #5e6ad2;
+            color: #fff;
+            border-color: #5e6ad2;
+        }
+        
+        /* Primary CTA Button */
+        .filter-btn.primary {
+            background: #5e6ad2;
+            color: #fff;
+            border-color: #5e6ad2;
+        }
+        
+        .filter-btn.primary:hover {
+            background: #828fff;
+        }
+        
+        /* Canvas Container: 包含图谱和状态提示 */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        /* Network Canvas: Elevated surface */
+        #mynetwork {
+            width: 100%;
+            height: 600px;
+            background: #191a1b;  /* Level 3 surface */
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        
+        /* Stats Panel */
+        #statsPanel {
+            background: #0f1011;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 11px;
+            font-weight: 510;
+            color: #8a8f98;
+            margin-top: 12px;
+            width: 64px;
+        }
+        
+        #statsPanel h3 {
+            font-size: 10px;
+            font-weight: 600;
+            color: #62666d;
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: 0.08em;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        
+        .stat-item span:first-child {
+            font-size: 9px;
+            color: #62666d;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8590c;
+        }
+        
+        .stat-item:last-child { border-bottom: none; }
+        
+        .stat-value {
+            color: #f7f8f8;
+            font-weight: 590;
+        }
+        
+        /* Status Bar - 在 canvas 内部左上角 */
+        #status {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 8px 16px;
+            background: rgba(15, 16, 17, 0.9);  /* 半透明背景 */
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+            font-weight: 510;
+            color: #8a8f98;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);  /* 模糊效果 */
+            transition: all 0.2s ease;
+        }
+        
+        #status.success { color: #10b981; }
+        #status.warning { color: #f97316; }
+        #status.error { color: #ef4444; }
+        
+        /* Modal Overlay */
+        #modalOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 900;
+            display: none;
+        }
+        
+        /* Details Modal: Elevated panel */
+        #nodeDetailsModal {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 360px;
+            height: 100%;
+            background: #191a1b;
+            border-left: 1px solid rgba(255,255,255,0.08);
+            padding: 32px 24px;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        #nodeDetailsModal.open {
+            transform: translateX(0);
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            color: #8a8f98;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.15s ease;
+        }
+        
+        .close-modal:hover {
+            background: rgba(255,255,255,0.08);
+            color: #f7f8f8;
+        }
+        
+        #nodeTitle {
+            font-size: 20px;
+            font-weight: 590;
+            color: #f7f8f8;
+            letter-spacing: -0.015em;
+            margin-bottom: 8px;
+        }
+        
+        #nodeCategory {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #5e6ad2;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 510;
+            color: #fff;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        
+        #nodePreview {
+            font-size: 13px;
+            font-weight: 400;
+            color: #8a8f98;
+            line-height: 1.6;
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* Action Buttons in Modal */
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+        }
+        
+        .btn-open {
+            flex: 1;
+            padding: 10px 16px;
+            background: #5e6ad2;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 510;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        
+        .btn-open:hover { background: #828fff; }
+        
+        .btn-close {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            color: #d0d6e0;
+            font-size: 12px;
+            font-weight: 510;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-close:hover {
+            background: rgba(255,255,255,0.08);
+            color: #f7f8f8;
+        }
+        
+        /* Keyboard Shortcut Hint */
+        .shortcut-hint {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);  /* 居中显示 */
+            background: #0f1011;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 11px;
+            font-weight: 510;
+            color: #62666d;
+            z-index: 100;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+        
+        .shortcut-hint:hover {
+            opacity: 1;
+        }
+        
+        .shortcut-hint kbd {
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #d0d6e0;
+            margin: 0 2px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            body { padding: 24px; }
+            #statsPanel { display: none; }
+            .shortcut-hint { display: none; }
+            #nodeDetailsModal { width: 100%; }
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            #mynetwork { height: 400px; }
+        }
+        
+        /* Node tooltip styling via vis-network */
+        .vis-tooltip {
+            background: #191a1b !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 6px !important;
+            color: #f7f8f8 !important;
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="workspace">
+        <!-- Sidebar: Tool Buttons + Stats -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="sidebar" id="sidebar">
+            <button class="sidebar-btn" onclick="detectIslands()" title="孤岛检测">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+                孤岛
+            </button>
+            <button class="sidebar-btn" onclick="analyzeInfluence()" title="影响力分析">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+                影响力
+            </button>
+            <button class="sidebar-btn" onclick="togglePathMode()" title="路径追踪">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 5l14 14"/></svg>
+                路径
+            </button>
+            <button class="sidebar-btn" onclick="showHeatmap()" title="热度统计">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c5.5 0 10 4.5 10 10s-10 10-10 10-10-4.5-10-10 4.5-10 10-10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                热度
+            </button>
+            <button class="sidebar-btn" onclick="showEdgeLabels()" title="关系线说明">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16m-8-8v16"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="20" r="2"/></svg>
+                关系
+            </button>
+            <button class="sidebar-btn" onclick="exportPNG()" title="导出PNG">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
+                导出
+            </button>
+            <button class="sidebar-btn" id="darkModeBtn" onclick="toggleDarkMode()" title="切换主题">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                主题
+            </button>
+        </div>
+        
+        <!-- Stats Panel (below sidebar) -->
+        <div id="statsPanel">
+            <h3>统计</h3>
+            <div class="stat-item"><span>节点</span><span class="stat-value" id="nodeCount">—</span></div>
+            <div class="stat-item"><span>连接</span><span class="stat-value" id="edgeCount">—</span></div>
+            <div class="stat-item"><span>可见</span><span class="stat-value" id="visibleCount">—</span></div>
+        </div>
+        
+        <!-- Keyboard Shortcut Hint -->
+        <div class="shortcut-hint">
+            <kbd>Ctrl</kbd>+<kbd>K</kbd> 搜索 · <kbd>ESC</kbd> 关闭 · <kbd>Ctrl</kbd>+<kbd>R</kbd> 重置
+        </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="search-container">
+                    <span class="search-icon">⌘</span>
+                    <input type="text" id="searchInput" placeholder="搜索知识节点...">
+                </div>
+                <div class="filter-buttons">
+                    <!-- 动态渲染筛选按钮 -->
+                </div>
+            </div>
+            
+            <!-- Canvas Container: 包含图谱和状态提示 -->
+            <div class="canvas-container">
+                <div id="mynetwork"></div>
+                <div id="status" class="success">
+                    <span>●</span> 图谱加载成功
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" onclick="closeModal()"></div>
+    
+    <!-- Node Details Modal (Slide-in from right) -->
+    <div id="nodeDetailsModal" onclick="event.stopPropagation()">
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h2 id="nodeTitle">节点标题</h2>
+        <span id="nodeCategory">分类</span>
+        <p id="nodePreview">预览内容...</p>
+        <div class="modal-actions">
+            <button class="btn-open" onclick="openInObsidian()">在 Obsidian 打开</button>
+            <button class="btn-close" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <!-- vis-network library -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <!-- Graph data embedded -->
+    <script id="graphDataScript">
+        // ========== Configuration ==========
+        const OBSIDIAN_VAULT_NAME = "obsidian-notes";
+        
+        // ========== Dynamic data area - modify directly here ==========
+        const graphData = {
+                "nodes": [{"id": 1, "label": "README", "group": "Root", "tooltip": "基于 Graphify 的交互式知识图谱笔记系统。 ``` obsidian-notes/", "file_path": "README.md", "type": "original", "connections": 0}, {"id": 2, "label": "知识笔记", "group": "General", "tooltip": "> 知识点摘要 - [[]] -", "file_path": "04-Templates/知识笔记.md", "type": "original", "connections": 0}, {"id": 3, "label": "通用笔记", "group": "General", "tooltip": "> 简要描述这个笔记的主题和目的 - -", "file_path": "04-Templates/通用笔记.md", "type": "original", "connections": 0}, {"id": 4, "label": "项目笔记", "group": "General", "tooltip": "> 项目简介：一句话描述项目目标 **目标**： **背景**：", "file_path": "04-Templates/项目笔记.md", "type": "original", "connections": 0}, {"id": 5, "label": "SOUL", "group": "System", "tooltip": "- [[Graphify 知识图谱系统]] - [[LLM-Wiki 个人知识库系统设计]] > **版本**: 1.0", "file_path": "01-System/Core/SOUL.md", "type": "original", "connections": 1}, {"id": 6, "label": "LLM-Wiki-System", "group": "AI-ML", "tooltip": "个人知识库系统，整合飞书、Obsidian、Hermes Agent和LLM Wiki功能。 - [[飞书集成]] - [[Obsidian知识库]]", "file_path": "02-Knowledge/AI-ML/LLM-Wiki-System.md", "type": "original", "connections": 4}, {"id": 7, "label": "LLM-Wiki个人知识库系统设计", "group": "Architecture", "tooltip": "- [[LLM-Wiki-System]] - [[飞书集成]] - [[Obsidian 知识库]]", "file_path": "02-Knowledge/Architecture/LLM-Wiki个人知识库系统设计.md", "type": "original", "connections": 6}, {"id": 8, "label": "图谱数据模型", "group": "Architecture", "tooltip": "- [[Graphify 知识图谱系统]] - [[自动分类引擎]] ```json", "file_path": "02-Knowledge/Architecture/图谱数据模型.md", "type": "original", "connections": 4}, {"id": 9, "label": "Obsidian知识库", "group": "Tools", "tooltip": "- [[LLM-Wiki 个人知识库系统设计]] - [[飞书集成]] ```", "file_path": "02-Knowledge/Tools/Obsidian知识库.md", "type": "original", "connections": 3}, {"id": 10, "label": "Graphify知识图谱系统", "group": "Graphify", "tooltip": "Graphify是一个知识图谱可视化系统，将Obsidian笔记转换为交互式HTML图谱，支持： - 自动节点分类和布局 - 双向链接跳转（图谱 ↔ Obsidian）", "file_path": "03-Projects/Graphify/Graphify知识图谱系统.md", "type": "original", "connections": 3}, {"id": 11, "label": "HTML 可视化渲染", "group": "Graphify", "tooltip": "Graphify 图谱的 HTML 渲染组件，负责： - 使用 vis-network 库渲染交互式图谱 - 节点分类着色和布局", "file_path": "03-Projects/Graphify/HTML 可视化渲染.md", "type": "original", "connections": 1}, {"id": 12, "label": "HTML可视化渲染", "group": "Graphify", "tooltip": "无内容预览", "file_path": "03-Projects/Graphify/HTML可视化渲染.md", "type": "original", "connections": 1}, {"id": 13, "label": "自动分类引擎", "group": "Graphify", "tooltip": "- [[图谱数据模型]] - [[Graphify 知识图谱系统]] - **AI/ML相关**：包含 \"neural\", \"transformer\", \"LLM\", \"machine learning\", \"深度学习\" → `Knowledge/AI-ML/`", "file_path": "03-Projects/Graphify/自动分类引擎.md", "type": "original", "connections": 3}, {"id": 14, "label": "Hermes 协调层", "group": "Hermes-Agent", "tooltip": "Hermes Agent 作为系统协调层，负责： - 飞书消息接收和处理 - 内容分类和路由", "file_path": "03-Projects/Hermes-Agent/Hermes 协调层.md", "type": "original", "connections": 4}, {"id": 15, "label": "Hermes协调层", "group": "Hermes-Agent", "tooltip": "无内容预览", "file_path": "03-Projects/Hermes-Agent/Hermes协调层.md", "type": "original", "connections": 2}, {"id": 16, "label": "飞书集成", "group": "Integration", "tooltip": "- [[Hermes 协调层]] - [[LLM-Wiki 个人知识库系统设计]] - [[Obsidian 知识库]]", "file_path": "03-Projects/Integration/飞书集成.md", "type": "original", "connections": 6}, {"id": 17, "label": "这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。_20260416_134709", "group": "Materials", "tooltip": "> 来源：飞书 test > 导入时间：2026-04-16 13:47:09 这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。", "file_path": "04-Materials/Feishu/这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。_20260416_134709.md", "type": "collected", "connections": 0}],
+                "edges": [{"from": 6, "to": 16}, {"from": 6, "to": 9}, {"from": 6, "to": 15}, {"from": 7, "to": 6}, {"from": 7, "to": 16}, {"from": 7, "to": 14}, {"from": 7, "to": 16}, {"from": 7, "to": 9}, {"from": 7, "to": 15}, {"from": 8, "to": 13}, {"from": 9, "to": 16}, {"from": 10, "to": 8}, {"from": 10, "to": 13}, {"from": 10, "to": 12}, {"from": 11, "to": 8}, {"from": 13, "to": 8}, {"from": 14, "to": 16}, {"from": 14, "to": 5}, {"from": 16, "to": 14}]
+            };
+        // ======================================================
+        
+        let currentNodes, currentEdges, network;
+        
+        // 工具函数：根据背景颜色返回合适的文字颜色（反转原则）
+        function getContrastColor(bgColor) {
+            // 浅色背景返回深色文字，深色背景返回浅色文字
+            const lightColors = ['#f7f8f8', '#ffffff', 'white', '#FDCB6E', '#FFD700', '#C0C0C0', '#CD7F32', '#B2BEC3', '#fef3c7', '#fde68a', '#e6fffa', '#f0fdfa'];
+            const darkThreshold = 150; // RGB 亮度阈值
+            
+            // 如果是预定义的浅色，返回深色文字
+            if (lightColors.some(c => bgColor.toLowerCase().includes(c.toLowerCase()))) {
+                return '#1e293b'; // 深色文字
+            }
+            
+            // 尝试解析 RGB 值
+            if (bgColor.startsWith('#')) {
+                const hex = bgColor.slice(1);
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                if (brightness > darkThreshold) {
+                    return '#1e293b'; // 深色文字
+                }
+            }
+            
+            return '#f7f8f8'; // 浅色文字
+        }
+        
+        // 工具函数：截断节点标签（不超过12个中文字符）
+        function truncateLabel(label) {
+            const maxChars = 12;  // 最多12个中文字
+            if (label.length <= maxChars) return label;
+            return label.substring(0, maxChars) + '...';
+        }
+        
+        // 分类名称翻译（英文 → 中文）
+        function translateCategory(cat) {
+            const map = {
+                'Root': '根节点',
+                'System': '系统',
+                'Knowledge': '知识',
+                'Projects': '项目',
+                'Daily': '日常',
+                'General': '通用',
+                'AI-ML': 'AI/ML',
+                'Architecture': '架构',
+                'Tools': '工具',
+                'Graphify': 'Graphify',
+                'Hermes-Agent': 'Hermes',
+                'Integration': '集成',
+                'Materials': '素材',
+                'MLOps': 'MLOps',
+                'DevOps': 'DevOps',
+                'Research': '研究',
+                'Creative': '创意'
+            };
+            return map[cat] || cat;  // 未找到则返回原名称
+        }
+        
+        // 动态渲染筛选按钮（从 graphData 中提取分类）
+        function renderFilterButtons() {
+            if (!graphData || !graphData.nodes) return;
+            
+            // 提取所有唯一分类
+            const categories = [...new Set(graphData.nodes.map(n => n.group))];
+            
+            // 按节点数量排序（多的在前）
+            const categoryCounts = {};
+            graphData.nodes.forEach(n => {
+                categoryCounts[n.group] = (categoryCounts[n.group] || 0) + 1;
+            });
+            categories.sort((a, b) => categoryCounts[b] - categoryCounts[a]);
+            
+            // 生成筛选按钮 HTML（简洁，无数量）
+            const container = document.querySelector('.filter-buttons');
+            container.innerHTML = `
+                <button class="filter-btn active primary" data-filter="all" onclick="filterByGroup('all')">全部</button>
+                ${categories.map(cat => `
+                    <button class="filter-btn" data-filter="${cat}" onclick="filterByGroup('${cat}')">${translateCategory(cat)}</button>
+                `).join('')}
+            `;
+            
+            console.log('筛选按钮已动态渲染:', categories.length, '个分类');
+        }
+        
+// 篮选按钮点击处理（调用 applyFilter + 更新按钮状态 + 更新样式）
+        function filterByGroup(group) {
+            // 更新按钮激活状态和样式
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.remove('primary');
+                
+                if (btn.dataset.filter === group) {
+                    btn.classList.add('active');
+                    // 激活状态样式：Linear indigo 高亮（不受主题影响）
+                    btn.style.background = '#5e6ad2';
+                    btn.style.color = '#ffffff';
+                    btn.style.border = '1px solid #5e6ad2';
+                } else {
+                    // 普通状态样式：根据当前主题设置
+                    if (isDarkMode) {
+                        btn.style.background = 'rgba(255,255,255,0.02)';
+                        btn.style.color = '#f7f8f8';
+                        btn.style.border = '1px solid rgba(255,255,255,0.06)';
+                    } else {
+                        btn.style.background = '#ffffff';
+                        btn.style.color = '#475569';
+                        btn.style.border = '1px solid rgba(0,0,0,0.06)';
+                    }
+                }
+            });
+            
+            // 调用现有的筛选函数
+            applyFilter(group);
+        }
+        
+        function getGroupColor(group) {
+            const colors = {
+                Root: '#5e6ad2',  // Linear indigo
+                System: '#f7f8f8',  // White
+                Knowledge: '#FF6B6B',
+                Projects: '#4ECDC4',
+                Daily: '#FFA500',
+                General: '#9370DB',
+                'AI-ML': '#74B9FF',
+                Architecture: '#A29BFE',
+                Tools: '#00B894',
+                Graphify: '#E17055',
+                'Hermes-Agent': '#FDCB6E',
+                Integration: '#E84393',
+                Materials: '#B2BEC3'
+            };
+            return colors[group] || '#8a8f98';  // Linear gray fallback
+        }
+        
+        function showNodeDetails(node) {
+            // 记录点击热度
+            recordClick(node.id);
+            
+            const bgColor = getGroupColor(node.group);
+            const borderColor = isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+            
+            document.getElementById('nodeTitle').textContent = node.label;
+            document.getElementById('nodeCategory').textContent = node.group;
+            document.getElementById('nodeCategory').style.backgroundColor = bgColor;
+            document.getElementById('nodeCategory').style.color = getContrastColor(bgColor);
+            document.getElementById('nodeCategory').style.border = '1px solid ' + borderColor;
+            document.getElementById('nodePreview').textContent = node.tooltip;
+            
+            // 恢复底部按钮显示（普通节点详情需要按钮）
+            document.querySelector('.modal-actions').style.display = 'flex';
+            
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.remove('open');
+            overlay.style.display = 'none';
+        }
+        
+        // 兼容旧函数名
+        function closeNodeDetails() { closeModal(); }
+        
+        function openInObsidian() {
+            const title = document.getElementById('nodeTitle').textContent;
+            if (title && title !== '点击图谱中的节点查看详情') {
+                const encodedPath = encodeURIComponent(title + '.md');
+                const obsidianUrl = `obsidian://open?vault=${OBSIDIAN_VAULT_NAME}&file=${encodedPath}`;
+                window.location.href = obsidianUrl;
+            }
+            closeNodeDetails();
+        }
+        
+        function initGraph() {
+            document.getElementById('status').innerHTML = '<span>●</span> 初始化中...';
+            document.getElementById('status').classList.add('warning');
+            
+            try {
+                const staticNodes = graphData.nodes;
+                const staticEdges = graphData.edges;
+                
+                currentNodes = new vis.DataSet(staticNodes.map(node => ({
+                    id: node.id,
+                    label: truncateLabel(node.label),
+                    group: node.group,
+                    title: node.tooltip,
+                    shape: 'dot',
+                    size: 25
+                })));
+                
+                currentEdges = new vis.DataSet(staticEdges.map(edge => ({
+                    from: edge.from,
+                    to: edge.to,
+                    color: { color: '#666666' },
+                    width: 2
+                })));
+                
+                const options = {
+                    groups: {
+                        Root: { color: { background: '#5e6ad2', border: '#828fff' }, shape: 'dot' },  // Linear indigo
+                        System: { color: { background: '#f7f8f8', border: '#d0d6e0' }, shape: 'dot' },  // White
+                        Knowledge: { color: { background: '#FF6B6B', border: '#CC5555' }, shape: 'dot' },
+                        Projects: { color: { background: '#4ECDC4', border: '#3DA8A0' }, shape: 'dot' },
+                        Daily: { color: { background: '#FFA500', border: '#CC8400' }, shape: 'dot' },
+                        General: { color: { background: '#9370DB', border: '#765AAB' }, shape: 'dot' },
+                        'AI-ML': { color: { background: '#74B9FF', border: '#5a9fe6' }, shape: 'dot' },
+                        Architecture: { color: { background: '#A29BFE', border: '#8b82e5' }, shape: 'dot' },
+                        Tools: { color: { background: '#00B894', border: '#009975' }, shape: 'dot' },
+                        Graphify: { color: { background: '#E17055', border: '#c85a44' }, shape: 'dot' },
+                        'Hermes-Agent': { color: { background: '#FDCB6E', border: '#e5b45c' }, shape: 'dot' },
+                        Integration: { color: { background: '#E84393', border: '#d03282' }, shape: 'dot' },
+                        Materials: { color: { background: '#B2BEC3', border: '#99a5af' }, shape: 'dot' }
+                    },
+                    nodes: {
+                        font: { color: '#f7f8f8', size: 12, face: 'Inter' },  // Light text for dark bg
+                        borderWidth: 2
+                    },
+                    edges: {
+                        color: { color: '#8a8f98', highlight: '#5e6ad2' },  // Linear gray edges
+                        width: 1.5
+                    },
+                    physics: {
+                        enabled: true,
+                        stabilization: { iterations: 100 }
+                    },
+                    interaction: {
+                        hover: true,
+                        navigationButtons: true,
+                        dragNodes: true,
+                        dragView: true,
+                        zoomView: true
+                    }
+                };
+                
+                const container = document.getElementById('mynetwork');
+                const data = { nodes: currentNodes, edges: currentEdges };
+                network = new vis.Network(container, data, options);
+                
+                network.on('stabilizationIterationsDone', function() {
+                    document.getElementById('status').innerHTML = '<span>●</span> 图谱加载成功';
+                    document.getElementById('status').classList.add('success');
+                    updateStatsPanel(staticNodes, staticEdges);
+                    renderFilterButtons();  // 动态渲染筛选按钮
+                });
+                
+                // 节点点击事件 - 显示详情或路径选择
+                network.on("click", function(params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const node = staticNodes.find(n => n.id == nodeId);
+                        
+                        // 路径模式下处理路径选择
+                        if (isPathMode) {
+                            handlePathModeClick(nodeId);
+                        } else {
+                            showNodeDetails(node);
+                        }
+                    }
+                });
+                
+                // 节点双击事件 - 直接跳转Obsidian
+                network.on("doubleClick", function(params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const node = staticNodes.find(n => n.id == nodeId);
+                        if (node && node.file_path) {
+                            // 构建Obsidian URL
+                            const encodedPath = encodeURIComponent(node.file_path);
+                            const obsidianUrl = `obsidian://open?vault=${OBSIDIAN_VAULT_NAME}&file=${encodedPath}`;
+                            window.location.href = obsidianUrl;
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                const status = document.getElementById('status');
+                status.innerHTML = '<span>●</span> 错误：' + error.message;
+                status.classList.remove('success');
+                status.classList.add('error');
+            }
+        }
+        
+        // 筛选功能
+        function applyFilter(filterType) {
+            const staticNodes = graphData.nodes;
+            const staticEdges = graphData.edges;
+            
+            let filteredNodes, filteredEdges;
+            
+            if (filterType === 'all') {
+                filteredNodes = [...staticNodes];
+                filteredEdges = [...staticEdges];
+            } else {
+                filteredNodes = staticNodes.filter(node => node.group === filterType);
+                const filteredNodeIds = new Set(filteredNodes.map(node => node.id));
+                filteredEdges = staticEdges.filter(edge => 
+                    filteredNodeIds.has(edge.from) && filteredNodeIds.has(edge.to)
+                );
+            }
+            
+            currentNodes.clear();
+            currentNodes.add(filteredNodes.map(node => ({
+                id: node.id,
+                label: truncateLabel(node.label),
+                group: node.group,
+                title: node.tooltip,
+                shape: 'dot',
+                size: 25
+            })));
+            
+            currentEdges.clear();
+            currentEdges.add(filteredEdges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                color: { color: '#666666' },
+                width: 2
+            })));
+            
+            document.getElementById('status').innerHTML = 
+                '<span>●</span> 筛选完成：' + filteredNodes.length + ' 个节点';
+        }
+        
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                const filterType = this.dataset.filter;
+                applyFilter(filterType);
+                network.fit();
+            });
+        });
+        
+        // 增强搜索功能 - 支持模糊搜索和高亮
+        let searchDebounceTimer = null;
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim().toLowerCase();
+            const staticNodes = graphData.nodes;
+            const staticEdges = graphData.edges;
+            
+            // 防抖处理
+            if (searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
+            }
+            
+            searchDebounceTimer = setTimeout(() => {
+                if (!query) {
+                    currentNodes.clear();
+                    currentNodes.add(staticNodes.map(node => ({
+                        id: node.id,
+                        label: truncateLabel(node.label),
+                        group: node.group,
+                        title: node.tooltip,
+                        shape: 'dot',
+                        size: 25
+                    })));
+                    
+                    currentEdges.clear();
+                    currentEdges.add(staticEdges.map(edge => ({
+                        from: edge.from,
+                        to: edge.to,
+                        color: { color: '#666666' },
+                        width: 2
+                    })));
+                    
+                    document.getElementById('status').innerHTML = 
+                        '<span>●</span> 搜索完成：' + staticNodes.length + ' 个节点';
+                    return;
+                }
+                
+                // 模糊搜索 - 支持拼音首字母和部分匹配
+                const filteredNodes = staticNodes.filter(node => {
+                    const label = node.label.toLowerCase();
+                    const tooltip = node.tooltip.toLowerCase();
+                    const pinyinInitials = getPinyinInitials(node.label);
+                    
+                    return label.includes(query) || 
+                           tooltip.includes(query) ||
+                           pinyinInitials.includes(query);
+                });
+                
+                const filteredNodeIds = new Set(filteredNodes.map(node => node.id));
+                const filteredEdges = staticEdges.filter(edge => 
+                    filteredNodeIds.has(edge.from) && filteredNodeIds.has(edge.to)
+                );
+                
+                currentNodes.clear();
+                currentNodes.add(filteredNodes.map(node => ({
+                    id: node.id,
+                    label: truncateLabel(node.label),
+                    group: node.group,
+                    title: node.tooltip,
+                    shape: 'dot',
+                    size: 25
+                })));
+                
+                currentEdges.clear();
+                currentEdges.add(filteredEdges.map(edge => ({
+                    from: edge.from,
+                    to: edge.to,
+                    color: { color: '#666666' },
+                    width: 2
+                })));
+                
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 搜索结果：' + filteredNodes.length + ' 个节点';
+            }, 300);
+        });
+        
+        // 拼音首字母转换（简化版）
+        function getPinyinInitials(text) {
+            const pinyinMap = {
+                '知识': 'zs', '项目': 'xm', '日记': 'rj', '通用': 'ty',
+                '系统': 'xt', '架构': 'jg', '设计': 'sj', '文档': 'wd',
+                'AI': 'ai', 'ML': 'ml', 'LLM': 'llm', 'API': 'api'
+            };
+            
+            let initials = '';
+            for (const [cn, py] of Object.entries(pinyinMap)) {
+                if (text.includes(cn)) {
+                    initials += py;
+                }
+            }
+            return initials.toLowerCase();
+        }
+        
+        // 更新统计面板（Linear style - simplified）
+        function updateStatsPanel(nodes, edges) {
+            document.getElementById('nodeCount').textContent = nodes.length;
+            document.getElementById('edgeCount').textContent = edges.length;
+            document.getElementById('visibleCount').textContent = nodes.length;
+        }
+        
+        // ========== 孤岛检测功能 ==========
+        function detectIslands() {
+            const staticNodes = graphData.nodes;
+            const staticEdges = graphData.edges;
+            
+            // 统计每个节点的连接数
+            const connectionCount = {};
+            staticNodes.forEach(node => {
+                connectionCount[node.id] = 0;
+            });
+            
+            staticEdges.forEach(edge => {
+                connectionCount[edge.from] = (connectionCount[edge.from] || 0) + 1;
+                connectionCount[edge.to] = (connectionCount[edge.to] || 0) + 1;
+            });
+            
+            // 找出孤岛节点（连接数为0）
+            const islandNodes = staticNodes.filter(node => connectionCount[node.id] === 0);
+            
+            // 高亮显示孤岛节点
+            currentNodes.clear();
+            currentNodes.add(staticNodes.map(node => ({
+                id: node.id,
+                label: truncateLabel(node.label),
+                group: node.group,
+                title: node.tooltip,
+                shape: 'dot',
+                size: connectionCount[node.id] === 0 ? 40 : 25,  // 孤岛节点更大
+                color: {
+                    background: connectionCount[node.id] === 0 ? '#FF4757' : getGroupColor(node.group),
+                    border: connectionCount[node.id] === 0 ? '#FF2222' : undefined
+                },
+                font: {
+                    color: connectionCount[node.id] === 0 ? '#FF4757' : '#333'
+                }
+            })));
+            
+            currentEdges.clear();
+            currentEdges.add(staticEdges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                color: { color: '#666666' },
+                width: 2
+            })));
+            
+            // 更新状态
+            if (islandNodes.length > 0) {
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 发现孤岛：' + islandNodes.length + ' 个节点';
+                
+                // 显示孤岛列表
+                showIslandList(islandNodes);
+            } else {
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 无孤岛 - 所有节点都已连接';
+            }
+            
+            network.fit();
+        }
+        
+        // 显示孤岛列表
+        function showIslandList(islands) {
+            const listHtml = islands.map(node => `
+                <div style="padding: 8px 12px; background: #fff5f5; border-radius: 8px; margin: 4px 0; cursor: pointer;" 
+                     onclick="focusNode(${node.id})">
+                    <span style="font-weight: 600;">${node.label}</span>
+                    <span style="color: #666; font-size: 12px;"> - ${node.group}</span>
+                </div>
+            `).join('');
+            
+            // 添加说明注释
+            const explainHtml = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 12px; color: #8a8f98; margin: 0 0 8px 0;">
+                        <strong>说明：</strong>孤岛是指没有任何 Wiki 链接连接的笔记。
+                    </p>
+                    <p style="font-size: 11px; color: #62666d; margin: 0;">
+                        这些笔记无法通过图谱导航到达。建议添加 Wiki 链接使其与其他笔记建立关联。
+                    </p>
+                </div>
+            `;
+            
+            // 更新详情面板显示孤岛列表
+            document.getElementById('nodeTitle').textContent = '发现 ' + islands.length + ' 个孤岛笔记';
+            document.getElementById('nodeCategory').textContent = '需要添加 Wiki 链接';
+            document.getElementById('nodeCategory').style.backgroundColor = '#FF4757';
+            document.getElementById('nodeCategory').style.color = getContrastColor('#FF4757');
+            document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+            document.getElementById('nodePreview').innerHTML = listHtml + explainHtml;
+            
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+        }
+        
+        // 聚焦到特定节点
+        function focusNode(nodeId) {
+            network.focus(nodeId, { scale: 1.5, animation: true });
+            const node = graphData.nodes.find(n => n.id === nodeId);
+            if (node) {
+                showNodeDetails(node);
+            }
+        }
+        
+        // ========== 导出PNG功能 ==========
+        function exportPNG() {
+            // 显示导出进度
+            document.getElementById('status').innerHTML = '<span>●</span> 正在导出图谱...';
+            
+            // 使用 vis-network 内置方法获取 canvas
+            const container = document.getElementById('mynetwork');
+            const canvas = container.querySelector('canvas');
+            
+            if (canvas) {
+                // 创建导出 canvas（带白色背景）
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = canvas.width;
+                exportCanvas.height = canvas.height;
+                
+                const ctx = exportCanvas.getContext('2d');
+                
+                // 绘制白色背景
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                
+                // 绘制图谱内容
+                ctx.drawImage(canvas, 0, 0);
+                
+                // 添加水印/标题
+                ctx.fillStyle = '#666666';
+                ctx.font = '14px -apple-system, sans-serif';
+                ctx.fillText(`Graphify 知识图谱 - ${new Date().toLocaleDateString()}`, 20, exportCanvas.height - 20);
+                ctx.fillText(`${graphData.nodes.length}节点, ${graphData.edges.length}边`, 20, exportCanvas.height - 40);
+                
+                // 转换为 PNG 并下载
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `graphify-${new Date().toISOString().slice(0,10)}.png`;
+                link.href = dataUrl;
+                link.click();
+                
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 已导出：graphify-' + new Date().toISOString().slice(0,10) + '.png';
+            } else {
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 导出失败：找不到图谱画布';
+            }
+        }
+        
+        // ========== 节点影响力分析 ==========
+        let influenceData = {};
+        
+        function analyzeInfluence() {
+            const staticNodes = graphData.nodes;
+            const staticEdges = graphData.edges;
+            
+            // 计算每个节点的连接数和被引用次数
+            const connections = {};
+            const citations = {};
+            
+            staticNodes.forEach(node => {
+                connections[node.id] = 0;
+                citations[node.id] = 0;
+            });
+            
+            staticEdges.forEach(edge => {
+                connections[edge.from]++;
+                connections[edge.to]++;
+                // 被引用次数（作为目标节点）
+                citations[edge.to]++;
+            });
+            
+            // 计算影响力分数
+            const influenceScores = {};
+            staticNodes.forEach(node => {
+                // 影响力 = 连接数权重 * 0.4 + 被引用权重 * 0.6
+                const connectionWeight = connections[node.id] / Math.max(...Object.values(connections)) || 0;
+                const citationWeight = citations[node.id] / Math.max(...Object.values(citations)) || 0;
+                influenceScores[node.id] = (connectionWeight * 0.4 + citationWeight * 0.6) * 100;
+            });
+            
+            // 按影响力排序
+            const sortedNodes = staticNodes.map(node => ({
+                ...node,
+                influence: influenceScores[node.id],
+                connections: connections[node.id],
+                citations: citations[node.id]
+            })).sort((a, b) => b.influence - a.influence);
+            
+            // 更新图谱显示 - 大小和颜色反映影响力
+            currentNodes.clear();
+            currentNodes.add(sortedNodes.map(node => {
+                const influenceLevel = node.influence / 100;
+                const size = 20 + influenceLevel * 30;  // 20-50
+                const hue = 200 - influenceLevel * 180;  // 蓝色(200) 到 红色(20)
+                
+                return {
+                    id: node.id,
+                    label: truncateLabel(node.label),
+                    group: node.group,
+                    title: node.tooltip + '\nInfluence: ' + Math.round(node.influence) + ' | Connections: ' + node.connections,
+                    shape: 'dot',
+                    size: size,
+                    color: {
+                        background: `hsl(${hue}, 70%, 50%)`,
+                        border: `hsl(${hue}, 70%, 40%)`
+                    }
+                };
+            }));
+            
+            currentEdges.clear();
+            currentEdges.add(staticEdges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                color: { color: '#999999' },
+                width: 2
+            })));
+            
+            // 显示影响力排行榜
+            showInfluenceRanking(sortedNodes);
+            
+            network.fit();
+        }
+        
+        // 显示影响力排行榜
+        function showInfluenceRanking(nodes) {
+            const top10 = nodes.slice(0, 10);
+            const rankHtml = top10.map((node, index) => `
+                <div style="padding: 8px 12px; background: ${index < 3 ? '#fef3c7' : '#f8fafc'}; border-radius: 8px; margin: 4px 0; cursor: pointer; display: flex; justify-content: space-between;" 
+                     onclick="focusNode(${node.id})">
+                    <span>
+                        <span style="font-weight: 700; color: ${index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : '#666'};">${index + 1}.</span>
+                        <span style="color: #333; font-weight: 600;">${node.label}</span>
+                    </span>
+                    <span style="color: #8B5CF6; font-weight: 600;">${Math.round(node.influence)}分</span>
+                </div>
+            `).join('');
+            
+            // 添加说明注释
+            const explainHtml = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 12px; color: #8a8f98; margin: 0 0 8px 0;">
+                        <strong>说明：</strong>影响力基于连接数和被引用次数计算。
+                    </p>
+                    <p style="font-size: 11px; color: #62666d; margin: 0;">
+                        影响力 = 连接权重×40% + 被引用权重×60%。节点越大越红 = 影响力越高，是知识图谱的核心节点。
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('nodeTitle').textContent = '影响力排行榜';
+            document.getElementById('nodeCategory').textContent = 'Top 10 核心知识节点';
+            document.getElementById('nodeCategory').style.backgroundColor = '#8B5CF6';
+            document.getElementById('nodeCategory').style.color = getContrastColor('#8B5CF6');
+            document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+            document.getElementById('nodePreview').innerHTML = rankHtml + explainHtml;
+            
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+            
+            document.getElementById('status').innerHTML = 
+                '<span>●</span> 影响力分析完成 - 核心节点：' + (top10[0]?.label || '无') + ' (' + Math.round(top10[0]?.influence || 0) + '分)';
+        }
+        
+        // ========== 暗黑模式 ==========
+        // 默认为暗黑模式（页面初始背景是 #08090a）
+        let isDarkMode = true;
+        let isPathMode = false;
+        let pathStartNode = null;
+        let pathEndNode = null;
+        
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            
+            if (isDarkMode) {
+                // 暗黑模式：UI 样式
+                document.body.style.background = '#08090a';
+                document.body.style.color = '#f7f8f8';
+                document.querySelector('.workspace').style.background = '#08090a';
+                document.querySelector('.header').style.background = '#0f1011';
+                document.querySelector('.header').style.border = '1px solid rgba(255,255,255,0.08)';
+                document.getElementById('searchInput').style.background = '#191a1b';
+                document.getElementById('searchInput').style.color = '#f7f8f8';
+                document.getElementById('searchInput').style.border = '1px solid rgba(255,255,255,0.06)';
+                document.getElementById('mynetwork').style.background = '#08090a';
+                document.getElementById('statsPanel').style.background = '#0f1011';
+                document.getElementById('statsPanel').style.color = '#8a8f98';
+                document.getElementById('statsPanel').style.border = '1px solid rgba(255,255,255,0.08)';
+                document.querySelector('#statsPanel h3').style.color = '#62666d';
+                document.querySelectorAll('.stat-item').forEach(item => {
+                    item.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
+                });
+                document.querySelectorAll('.stat-value').forEach(val => {
+                    val.style.color = '#e8590c';  // 橙色统计数字
+                });
+                document.getElementById('nodeDetailsModal').style.background = '#191a1b';
+                document.getElementById('nodeDetailsModal').style.borderLeft = '1px solid rgba(255,255,255,0.08)';
+                document.getElementById('status').style.color = '#f7f8f8';
+                
+                // 更新详情页元素样式（暗黑模式）
+                document.getElementById('nodeTitle').style.color = '#f7f8f8';
+                document.getElementById('nodePreview').style.color = '#8a8f98';
+                document.getElementById('nodePreview').style.background = 'rgba(255,255,255,0.02)';
+                document.getElementById('nodePreview').style.border = '1px solid rgba(255,255,255,0.05)';
+                document.getElementById('nodeCategory').style.border = '1px solid rgba(255,255,255,0.15)';
+                
+                // 更新关闭按钮样式（暗黑模式）
+                document.querySelector('.close-modal').style.color = '#8a8f98';
+                document.querySelector('.close-modal').style.background = 'rgba(255,255,255,0.05)';
+                document.querySelector('.close-modal').style.border = '1px solid rgba(255,255,255,0.08)';
+                
+                // 更新底部按钮样式（暗黑模式）
+                document.querySelector('.btn-open').style.color = '#f7f8f8';
+                document.querySelector('.btn-open').style.background = '#5e6ad2';
+                document.querySelector('.btn-close').style.color = '#8a8f98';
+                document.querySelector('.btn-close').style.background = 'rgba(255,255,255,0.05)';
+                
+                // 更新 sidebar 样式（暗黑模式）
+                document.getElementById('sidebar').style.background = '#0f1011';
+                document.getElementById('sidebar').style.border = '1px solid rgba(255,255,255,0.05)';
+                document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                    btn.style.background = 'rgba(255,255,255,0.02)';
+                    btn.style.color = '#8a8f98';
+                    btn.style.border = '1px solid rgba(255,255,255,0.06)';
+                });
+                
+                // 更新 status 样式（暗黑模式）
+                document.getElementById('status').style.background = 'rgba(15, 16, 17, 0.9)';
+                document.getElementById('status').style.border = '1px solid rgba(255,255,255,0.05)';
+                // 深色模式强制使用橙色（更醒目）
+                document.getElementById('status').style.color = '#f97316';
+                
+                // 更新快捷键提示样式（暗黑模式）
+                document.querySelector('.shortcut-hint').style.background = '#0f1011';
+                document.querySelector('.shortcut-hint').style.color = '#62666d';
+                document.querySelectorAll('.shortcut-hint kbd').forEach(kbd => {
+                    kbd.style.background = 'rgba(255,255,255,0.08)';
+                    kbd.style.color = '#f7f8f8';
+                });
+                
+                // 更新筛选按钮样式（暗黑模式）- 需要区分激活/未激活状态
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.classList.contains('active') || btn.classList.contains('primary')) {
+                        // 激活状态：保持 Linear indigo 高亮
+                        btn.style.background = '#5e6ad2';
+                        btn.style.color = '#ffffff';
+                        btn.style.border = '1px solid #5e6ad2';
+                    } else {
+                        // 普通状态：深色背景
+                        btn.style.background = 'rgba(255,255,255,0.02)';
+                        btn.style.color = '#f7f8f8';
+                        btn.style.border = '1px solid rgba(255,255,255,0.06)';
+                    }
+                });
+                
+                // 更新节点文字颜色（白色）
+                if (network) {
+                    network.setOptions({
+                        nodes: { font: { color: '#f7f8f8' } },
+                        edges: { color: { color: '#8a8f98' } }
+                    });
+                }
+                
+                document.getElementById('status').innerHTML = '<span>●</span> 暗黑模式已开启';
+            } else {
+                // 明亮模式：UI 样式
+                document.body.style.background = '#f7f8f8';
+                document.body.style.color = '#1e293b';
+                document.querySelector('.workspace').style.background = '#f7f8f8';
+                document.querySelector('.header').style.background = '#ffffff';
+                document.querySelector('.header').style.border = '1px solid rgba(0,0,0,0.08)';
+                document.getElementById('searchInput').style.background = '#ffffff';
+                document.getElementById('searchInput').style.color = '#1e293b';
+                document.getElementById('searchInput').style.border = '1px solid rgba(0,0,0,0.06)';
+                document.getElementById('mynetwork').style.background = '#f7f8f8';
+                document.getElementById('statsPanel').style.background = '#ffffff';
+                document.getElementById('statsPanel').style.color = '#475569';
+                document.getElementById('statsPanel').style.border = '1px solid rgba(0,0,0,0.08)';
+                document.querySelector('#statsPanel h3').style.color = '#94a3b8';
+                document.querySelectorAll('.stat-item').forEach(item => {
+                    item.style.borderBottom = '1px solid rgba(0,0,0,0.03)';
+                });
+                document.querySelectorAll('.stat-value').forEach(val => {
+                    val.style.color = '#e8590c';  // 橙色统计数字
+                });
+                document.getElementById('nodeDetailsModal').style.background = '#ffffff';
+                document.getElementById('nodeDetailsModal').style.borderLeft = '1px solid rgba(0,0,0,0.08)';
+                document.getElementById('status').style.color = '#1e293b';
+                
+                // 更新详情页元素样式（明亮模式）
+                document.getElementById('nodeTitle').style.color = '#1e293b';
+                document.getElementById('nodePreview').style.color = '#64748b';
+                document.getElementById('nodePreview').style.background = 'rgba(0,0,0,0.02)';
+                document.getElementById('nodePreview').style.border = '1px solid rgba(0,0,0,0.05)';
+                document.getElementById('nodeCategory').style.border = '1px solid rgba(0,0,0,0.15)';
+                
+                // 更新关闭按钮样式（明亮模式）
+                document.querySelector('.close-modal').style.color = '#475569';
+                document.querySelector('.close-modal').style.background = 'rgba(0,0,0,0.05)';
+                document.querySelector('.close-modal').style.border = '1px solid rgba(0,0,0,0.08)';
+                
+                // 更新底部按钮样式（明亮模式）
+                document.querySelector('.btn-open').style.color = '#1e293b';
+                document.querySelector('.btn-open').style.background = '#5e6ad2';
+                document.querySelector('.btn-close').style.color = '#475569';
+                document.querySelector('.btn-close').style.background = 'rgba(0,0,0,0.05)';
+                
+                // 更新 sidebar 样式（明亮模式）
+                document.getElementById('sidebar').style.background = '#ffffff';
+                document.getElementById('sidebar').style.border = '1px solid rgba(0,0,0,0.08)';
+                document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                    btn.style.background = 'rgba(0,0,0,0.02)';
+                    btn.style.color = '#475569';
+                    btn.style.border = '1px solid rgba(0,0,0,0.06)';
+                });
+                
+                // 更新 status 样式（明亮模式）
+                document.getElementById('status').style.background = 'rgba(255, 255, 255, 0.9)';
+                document.getElementById('status').style.border = '1px solid rgba(0,0,0,0.08)';
+                // 浅色模式使用深色橙色（醒目）
+                document.getElementById('status').style.color = '#ea580c';
+                
+                // 更新快捷键提示样式（明亮模式）
+                document.querySelector('.shortcut-hint').style.background = '#ffffff';
+                document.querySelector('.shortcut-hint').style.color = '#94a3b8';
+                document.querySelectorAll('.shortcut-hint kbd').forEach(kbd => {
+                    kbd.style.background = 'rgba(0,0,0,0.08)';
+                    kbd.style.color = '#1e293b';
+                });
+                
+                // 更新筛选按钮样式（明亮模式）- 需要区分激活/未激活状态
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.classList.contains('active') || btn.classList.contains('primary')) {
+                        // 激活状态：保持 Linear indigo 高亮
+                        btn.style.background = '#5e6ad2';
+                        btn.style.color = '#ffffff';
+                        btn.style.border = '1px solid #5e6ad2';
+                    } else {
+                        // 普通状态：浅色背景
+                        btn.style.background = '#ffffff';
+                        btn.style.color = '#475569';
+                        btn.style.border = '1px solid rgba(0,0,0,0.06)';
+                    }
+                });
+                
+                // 更新节点文字颜色（黑色）
+                if (network) {
+                    network.setOptions({
+                        nodes: { font: { color: '#1e293b' } },
+                        edges: { color: { color: '#94a3b8' } }
+                    });
+                }
+                
+                document.getElementById('status').innerHTML = '<span>●</span> 明亮模式已开启';
+            }
+        }
+        
+        // ========== 路径追踪功能 ==========
+        function togglePathMode() {
+            isPathMode = !isPathMode;
+            pathStartNode = null;
+            pathEndNode = null;
+            
+            if (isPathMode) {
+                document.getElementById('status').innerHTML = '<span>●</span> 路径模式已开启 - 点击第一个节点';
+                
+                // 显示路径模式说明弹窗
+                const explainHtml = `
+                    <div style="padding: 12px;">
+                        <p style="font-size: 14px; color: #8a8f98; margin: 0 0 12px 0;">
+                            <strong>路径追踪模式已开启</strong>
+                        </p>
+                        <p style="font-size: 12px; color: #62666d; margin: 0 0 8px 0;">
+                            1. 点击第一个节点作为<strong style="color: #F59E0B;">起点</strong>
+                        </p>
+                        <p style="font-size: 12px; color: #62666d; margin: 0 0 8px 0;">
+                            2. 点击第二个节点作为<strong style="color: #10B981;">终点</strong>
+                        </p>
+                        <p style="font-size: 12px; color: #62666d; margin: 0;">
+                            系统将计算两点间的<strong style="color: #5e6ad2;">最短 Wiki 链接路径</strong>
+                        </p>
+                    </div>
+                    <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                        <p style="font-size: 11px; color: #62666d; margin: 0;">
+                            提示：再次点击"路径"按钮可退出路径模式
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('nodeTitle').textContent = '路径追踪';
+                document.getElementById('nodeCategory').textContent = '操作说明';
+                document.getElementById('nodeCategory').style.backgroundColor = '#F59E0B';
+                document.getElementById('nodeCategory').style.color = getContrastColor('#F59E0B');
+                document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+                document.getElementById('nodePreview').innerHTML = explainHtml;
+                
+                // 显示弹窗
+                const modal = document.getElementById('nodeDetailsModal');
+                const overlay = document.getElementById('modalOverlay');
+                modal.classList.add('open');
+                overlay.style.display = 'block';
+                
+                // 恢复原始节点样式
+                resetGraphDisplay();
+            } else {
+                document.getElementById('status').innerHTML = '<span>●</span> 路径模式已关闭';
+                closeModal();
+                resetGraphDisplay();
+            }
+        }
+        
+        // 重置图谱显示
+        function resetGraphDisplay() {
+            currentNodes.clear();
+            currentNodes.add(graphData.nodes.map(node => ({
+                id: node.id,
+                label: truncateLabel(node.label),
+                group: node.group,
+                title: node.tooltip,
+                shape: 'dot',
+                size: 25,
+                color: { background: getGroupColor(node.group), border: '#ffffff' }
+            })));
+            
+            currentEdges.clear();
+            currentEdges.add(graphData.edges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                color: { color: '#999999' },
+                width: 2
+            })));
+        }
+        
+        // 路径模式下的节点点击处理
+        function handlePathModeClick(nodeId) {
+            if (!isPathMode) return;
+            
+            if (!pathStartNode) {
+                pathStartNode = nodeId;
+                const node = graphData.nodes.find(n => n.id == nodeId);
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 起点：' + node.label + ' - 点击第二个节点';
+                
+                // 高亮起点
+                network.body.data.nodes.update({
+                    id: nodeId,
+                    color: { background: '#F59E0B', border: '#D97706' },
+                    size: 35
+                });
+            } else if (!pathEndNode && nodeId !== pathStartNode) {
+                pathEndNode = nodeId;
+                const node = graphData.nodes.find(n => n.id == nodeId);
+                document.getElementById('status').innerHTML = 
+                    '<span>●</span> 终点：' + node.label + ' - 计算路径中...';
+                
+                // 高亮终点
+                network.body.data.nodes.update({
+                    id: nodeId,
+                    color: { background: '#10B981', border: '#059669' },
+                    size: 35
+                });
+                
+                // 计算最短路径
+                const path = findShortestPath(pathStartNode, pathEndNode);
+                if (path) {
+                    highlightPath(path);
+                }
+            }
+        }
+        
+        // BFS 最短路径算法
+        function findShortestPath(startId, endId) {
+            const edges = graphData.edges;
+            
+            // 构建邻接表
+            const adjacency = {};
+            graphData.nodes.forEach(node => {
+                adjacency[node.id] = [];
+            });
+            
+            edges.forEach(edge => {
+                adjacency[edge.from].push(edge.to);
+                adjacency[edge.to].push(edge.from);  // 双向
+            });
+            
+            // BFS
+            const queue = [[startId]];
+            const visited = new Set([startId]);
+            
+            while (queue.length > 0) {
+                const path = queue.shift();
+                const current = path[path.length - 1];
+                
+                if (current === endId) {
+                    return path;
+                }
+                
+                for (const neighbor of adjacency[current]) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push([...path, neighbor]);
+                    }
+                }
+            }
+            
+            return null;  // 没有路径
+        }
+        
+        // 高亮显示路径
+        function highlightPath(path) {
+            // 重置图谱
+            resetGraphDisplay();
+            
+            // 高亮路径节点
+            path.forEach(nodeId => {
+                network.body.data.nodes.update({
+                    id: nodeId,
+                    color: { background: '#F59E0B', border: '#D97706' },
+                    size: 35
+                });
+            });
+            
+            // 高亮起点和终点
+            network.body.data.nodes.update({
+                id: pathStartNode,
+                color: { background: '#EF4444', border: '#B91C1C' },
+                size: 40
+            });
+            network.body.data.nodes.update({
+                id: pathEndNode,
+                color: { background: '#10B981', border: '#059669' },
+                size: 40
+            });
+            
+            // 高亮路径边
+            for (let i = 0; i < path.length - 1; i++) {
+                const from = path[i];
+                const to = path[i + 1];
+                
+                // 找到对应的边并高亮
+                currentEdges.forEach(edge => {
+                    if ((edge.from == from && edge.to == to) || 
+                        (edge.from == to && edge.to == from)) {
+                        network.body.data.edges.update({
+                            id: edge.id,
+                            color: { color: '#F59E0B' },
+                            width: 4
+                        });
+                    }
+                });
+            }
+            
+            // 显示路径详情
+            const startNode = graphData.nodes.find(n => n.id == pathStartNode);
+            const endNode = graphData.nodes.find(n => n.id == pathEndNode);
+            const pathNodes = path.map(id => graphData.nodes.find(n => n.id == id));
+            
+            document.getElementById('status').innerHTML = 
+                '<span>●</span> 路径长度：' + (path.length - 1) + ' 步 | ' + startNode.label + ' → ' + endNode.label;
+            
+            // 显示路径详情面板
+            showPathDetails(pathNodes);
+        }
+        
+        // 显示路径详情
+        function showPathDetails(pathNodes) {
+            const pathHtml = pathNodes.map((node, index) => `
+                <div style="padding: 8px 12px; background: ${index === 0 ? '#fee2e2' : index === pathNodes.length - 1 ? '#d1fae5' : '#fef3c7'}; border-radius: 8px; margin: 4px 0; cursor: pointer;" 
+                     onclick="focusNode(${node.id})">
+                    <span style="color: ${index === 0 ? '#EF4444' : index === pathNodes.length - 1 ? '#10B981' : '#F59E0B'}; font-weight: 700;">
+                        ${index === 0 ? '起点' : index === pathNodes.length - 1 ? '终点' : '中继'}
+                    </span>
+                    <span style="color: #333; font-weight: 600;">${node.label}</span>
+                </div>
+            `).join('');
+            
+            // 添加说明注释
+            const explainHtml = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 12px; color: #8a8f98; margin: 0 0 8px 0;">
+                        <strong>说明：</strong>显示两个知识点之间的最短路径。
+                    </p>
+                    <p style="font-size: 11px; color: #62666d; margin: 0;">
+                        点击路径追踪后，依次点击两个节点，系统会通过 BFS 算法计算出它们之间的最短 Wiki 链接路径。
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('nodeTitle').textContent = '最短路径';
+            document.getElementById('nodeCategory').textContent = `${pathNodes.length - 1} 步连接`;
+            document.getElementById('nodeCategory').style.backgroundColor = '#F59E0B';
+            document.getElementById('nodeCategory').style.color = getContrastColor('#F59E0B');
+            document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+            document.getElementById('nodePreview').innerHTML = pathHtml + explainHtml;
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+        }
+        
+        // ========== 知识热度统计 ==========
+        // 使用 localStorage 记录点击热度
+        function recordClick(nodeId) {
+            const heatData = JSON.parse(localStorage.getItem('graphify_heat') || '{}');
+            heatData[nodeId] = (heatData[nodeId] || 0) + 1;
+            localStorage.setItem('graphify_heat', JSON.stringify(heatData));
+        }
+        
+        function getHeatData() {
+            return JSON.parse(localStorage.getItem('graphify_heat') || '{}');
+        }
+        
+        function showHeatmap() {
+            const heatData = getHeatData();
+            const staticNodes = graphData.nodes;
+            
+            // 计算最大热度
+            const maxHeat = Math.max(...Object.values(heatData), 1);
+            
+            // 按热度排序
+            const sortedNodes = staticNodes.map(node => ({
+                ...node,
+                heat: heatData[node.id] || 0
+            })).sort((a, b) => b.heat - a.heat);
+            
+            // 更新图谱显示 - 大小和颜色反映热度
+            currentNodes.clear();
+            currentNodes.add(sortedNodes.map(node => {
+                const heatLevel = node.heat / maxHeat;
+                const size = 20 + heatLevel * 40;  // 20-60
+                
+                // 灰色(冷) → 红色(热)
+                const hue = 0;  // 红色
+                const saturation = heatLevel * 100;
+                const lightness = 50 + (1 - heatLevel) * 30;  // 50-80
+                
+                return {
+                    id: node.id,
+                    label: truncateLabel(node.label),
+                    group: node.group,
+                    title: node.tooltip + '\n点击次数: ' + node.heat,
+                    shape: 'dot',
+                    size: size,
+                    color: {
+                        background: node.heat > 0 
+                            ? `hsl(0, ${saturation}%, ${lightness}%)` 
+                            : '#cccccc',
+                        border: node.heat > 0 
+                            ? `hsl(0, ${saturation}%, ${lightness - 10}%)` 
+                            : '#999999'
+                    }
+                };
+            }));
+            
+            currentEdges.clear();
+            currentEdges.add(graphData.edges.map(edge => ({
+                from: edge.from,
+                to: edge.to,
+                color: { color: '#999999' },
+                width: 2
+            })));
+            
+            // 显示热度排行榜
+            showHeatRanking(sortedNodes);
+            
+            network.fit();
+        }
+        
+        // 显示热度排行榜
+        function showHeatRanking(nodes) {
+            const top10 = nodes.filter(n => n.heat > 0).slice(0, 10);
+            
+            let rankHtml = '';
+            if (top10.length === 0) {
+                rankHtml = '<div style="padding: 12px; color: #666; text-align: center;">暂无点击记录<br><small>点击节点开始记录热度</small></div>';
+            } else {
+                rankHtml = top10.map((node, index) => `
+                    <div style="padding: 8px 12px; background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-radius: 8px; margin: 4px 0; cursor: pointer; display: flex; justify-content: space-between;" 
+                         onclick="focusNode(${node.id})">
+                        <span>
+                            <span style="font-weight: 700; color: #EC4899;">${index + 1}.</span>
+                            <span style="color: #333; font-weight: 600;">${node.label}</span>
+                        </span>
+                        <span style="color: #EC4899; font-weight: 600;">${node.heat}次</span>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('nodeTitle').textContent = '知识热度统计';
+            document.getElementById('nodeCategory').textContent = 'Top 10 热门知识';
+            document.getElementById('nodeCategory').style.backgroundColor = '#EC4899';
+            document.getElementById('nodeCategory').style.color = getContrastColor('#EC4899');
+            document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+            
+            // 添加说明注释
+            const explainHtml = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 12px; color: #8a8f98; margin: 0 0 8px 0;">
+                        <strong>说明：</strong>热度统计基于您在图谱中点击节点的次数。
+                    </p>
+                    <p style="font-size: 11px; color: #62666d; margin: 0;">
+                        节点越大越红 = 点击越多，表示您对该知识点越关注。数据存储在本地浏览器。
+                    </p>
+                </div>
+                <button onclick="clearHeatData()" style="margin-top: 12px; padding: 8px 16px; background: rgba(239,68,153,0.1); border: 1px solid rgba(239,68,153,0.3); border-radius: 6px; color: #EC4899; font-size: 12px; cursor: pointer; width: 100%; transition: all 0.15s ease;">
+                    清除热度记录
+                </button>
+            `;
+            document.getElementById('nodePreview').innerHTML = rankHtml + explainHtml;
+            
+            // 热度统计页面不需要底部按钮（点击排行榜项即可跳转）
+            document.querySelector('.modal-actions').style.display = 'none';
+            
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+            
+            document.getElementById('status').innerHTML = 
+                '<span>●</span> 热度统计 - 共记录 ' + Object.keys(getHeatData()).length + ' 个节点的点击';
+        }
+        
+        // 清除热度记录
+        function clearHeatData() {
+            localStorage.removeItem('graphify_heat');
+            document.getElementById('status').innerHTML = '<span>●</span> 热度记录已清除';
+            showHeatmap();
+        }
+        
+        // ========== 关系线标注功能 ==========
+        let showingEdgeLabels = false;
+        
+        // 关系类型定义
+        const edgeTypes = {
+            'wiki-link': { label: 'Wiki链接', color: '#94a3b8', style: 'solid' },
+            'reference': { label: '引用', color: '#3b82f6', style: 'solid' },
+            'dependency': { label: '依赖', color: '#f97316', style: 'dashed' },
+            'related': { label: '相关', color: '#22c55e', style: 'solid' },
+            'extends': { label: '扩展', color: '#8b5cf6', style: 'solid' },
+            'implements': { label: '实现', color: '#ec4899', style: 'dashed' }
+        };
+        
+        function showEdgeLabels() {
+            showingEdgeLabels = !showingEdgeLabels;
+            
+            if (showingEdgeLabels) {
+                // 为每条边添加标签和样式
+                const edgesWithLabels = graphData.edges.map(edge => {
+                    // 根据节点关系推断类型（简单规则）
+                    const fromNode = graphData.nodes.find(n => n.id == edge.from);
+                    const toNode = graphData.nodes.find(n => n.id == edge.to);
+                    
+                    // 推断关系类型
+                    let type = 'wiki-link';  // 默认
+                    
+                    // 系统类节点通常是依赖关系
+                    if (toNode?.group === 'System' || toNode?.group === 'Tools') {
+                        type = 'dependency';
+                    }
+                    // 同类节点通常是相关关系
+                    else if (fromNode?.group === toNode?.group) {
+                        type = 'related';
+                    }
+                    // AI/ML 相关节点
+                    else if (toNode?.group === 'AI-ML' || fromNode?.group === 'AI-ML') {
+                        type = 'reference';
+                    }
+                    
+                    const edgeStyle = edgeTypes[type];
+                    
+                    return {
+                        ...edge,
+                        label: edgeStyle.label,
+                        color: { color: edgeStyle.color },
+                        width: 2,
+                        dashes: edgeStyle.style === 'dashed',
+                        font: {
+                            color: edgeStyle.color,
+                            strokeWidth: 0,
+                            size: 12,
+                            align: 'middle'
+                        },
+                        smooth: {
+                            type: 'curvedCW',
+                            roundness: 0.2
+                        },
+                        arrows: {
+                            to: { enabled: true, scaleFactor: 0.8 }
+                        }
+                    };
+                });
+                
+                currentEdges.clear();
+                currentEdges.add(edgesWithLabels);
+                
+                document.getElementById('status').innerHTML = 
+                    '🔗 关系标签已显示 - Wiki链接/引用/依赖/相关';
+                
+                // 显示关系类型说明
+                showEdgeTypeLegend();
+            } else {
+                // 移除标签，恢复原始样式
+                currentEdges.clear();
+                currentEdges.add(graphData.edges.map(edge => ({
+                    from: edge.from,
+                    to: edge.to,
+                    color: { color: '#999999' },
+                    width: 2,
+                    label: '',
+                    dashes: false
+                })));
+                
+                document.getElementById('status').innerHTML = '🔗 关系标签已隐藏';
+            }
+        }
+        
+        // 显示关系类型说明
+        function showEdgeTypeLegend() {
+            const legendHtml = Object.entries(edgeTypes).map(([key, style]) => `
+                <div style="padding: 8px 12px; background: #f8fafc; border-radius: 8px; margin: 4px 0; display: flex; align-items: center;">
+                    <div style="width: 30px; height: 4px; background: ${style.color}; ${style.style === 'dashed' ? 'background: repeating-linear-gradient(90deg, ${style.color}, ${style.color} 4px, transparent 4px, transparent 8px);' : ''} margin-right: 12px;"></div>
+                    <span style="color: ${style.color}; font-weight: 600;">${style.label}</span>
+                </div>
+            `).join('');
+            
+            // 添加说明注释
+            const explainHtml = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 12px; color: #8a8f98; margin: 0 0 8px 0;">
+                        <strong>说明：</strong>图谱中的连线代表不同类型的关系。
+                    </p>
+                    <p style="font-size: 11px; color: #62666d; margin: 0;">
+                        关系类型根据节点分类自动推断。Wiki链接是 Obsidian 中的 [[链接]]，依赖表示工具/系统依赖，相关表示同类知识关联。
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('nodeTitle').textContent = '关系类型说明';
+            document.getElementById('nodeCategory').textContent = '知识连接方式';
+            document.getElementById('nodeCategory').style.backgroundColor = '#64748B';
+            document.getElementById('nodeCategory').style.color = getContrastColor('#64748B');
+            document.getElementById('nodeCategory').style.border = '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)');
+            document.getElementById('nodePreview').innerHTML = legendHtml + explainHtml;
+            
+            // 使用 CSS class 控制显示（Linear style）
+            const modal = document.getElementById('nodeDetailsModal');
+            const overlay = document.getElementById('modalOverlay');
+            modal.classList.add('open');
+            overlay.style.display = 'block';
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', initGraph);
+        
+        // ESC 键关闭详情面板
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K: 聚焦搜索框
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+                document.getElementById('searchInput').select();
+            }
+            
+            // Ctrl/Cmd + R: 刷新图谱
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                location.reload();
+            }
+            
+            // Ctrl/Cmd + F: 聚焦搜索框（替代浏览器默认）
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+                document.getElementById('searchInput').select();
+            }
+        });
+    </script>
+</html>

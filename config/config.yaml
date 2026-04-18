@@ -1,0 +1,74 @@
+# Graphify 配置文件
+
+# ==================== Obsidian Vault ====================
+obsidian:
+  # 你的 Obsidian vault 路径
+  vault_path: "/path/to/your/obsidian-notes"
+  
+  # 是否启用自动更新
+  auto_update: true
+
+# ==================== 图谱设置 ====================
+graph:
+  # 主题: dark / light
+  theme: "dark"
+  
+  # 主色调（Linear 风格）
+  primary_color: "#5e6ad2"
+  
+  # 节点标签最大长度
+  max_label_length: 12
+  
+  # 分类颜色映射
+  colors:
+    System: "#f7f8f8"
+    Knowledge: "#5e6ad2"
+    Projects: "#4DAF73"
+    Materials: "#E6A23C"
+    General: "#909399"
+    AI-ML: "#5e6ad2"
+    Architecture: "#409EFF"
+    Tools: "#67C23A"
+
+# ==================== 自动更新 ====================
+update:
+  # 是否启用自动更新守护进程
+  enabled: true
+  
+  # 更新间隔（秒，防抖）
+  interval: 3
+  
+  # 监控的文件类型
+  file_types:
+    - ".md"
+
+# ==================== 飞书集成 ====================
+feishu:
+  # 是否启用飞书消息导入
+  enabled: false
+  
+  # 飞书 API Token（建议用环境变量）
+  # token: "YOUR_TOKEN"
+  
+  # 保存目录（相对于 vault）
+  save_dir: "04-Materials/Feishu"
+
+# ==================== 功能开关 ====================
+features:
+  # 篮选分类
+  filter: true
+  
+  # 路径追踪
+  path_tracing: true
+  
+  # 热度统计
+  heat_map: true
+  
+  # 影响力分析
+  influence: true
+  
+  # 孤岛检测
+  island_detection: true
+  
+  # PNG 导出
+  export_png: true
