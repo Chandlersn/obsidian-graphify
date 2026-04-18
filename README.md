@@ -182,7 +182,7 @@ obsidian-notes/
 ├── 02-Knowledge/       # 知识领域
 ├── 03-Projects/        # 项目文档
 ├── 04-Materials/       # 收藏素材
-├── 04-Templates/       # 笔记模板
+├── 05-Templates/       # 笔记模板
 └── .graphify/          # 图谱系统
 ```
 
