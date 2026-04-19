@@ -27,7 +27,7 @@
 
 ## 系统架构
 
-![Graphify Architecture](assets/screenshots/Graphify%20Knowledge%20Graph%20System.png)
+![Graphify Architecture](assets/screenshots/Graphify%20Knowledge%20System.png)
 
 **核心组件**：
 
