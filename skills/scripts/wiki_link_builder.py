@@ -34,34 +34,57 @@ SEMANTIC_GROUPS = {
 # ==============================================
 
 def extract_keywords(content):
-    """从文档内容提取关键词（适配简化模板）"""
-    # 新格式：## 关键概念
-    concept_pattern = r'## 关键概念\n([\s\S]*?)(?:\n---|\n## |$)'
-    concept_match = re.search(concept_pattern, content)
-    
+    """从文档内容提取关键词（适配多种模板格式）"""
     keywords = []
-    if concept_match:
-        # 匹配 "- **概念名** → 解释"
-        bullet_pattern = r'- \*\*([^*]+)\*\* →'
-        keywords = re.findall(bullet_pattern, concept_match.group(1))
-        keywords = [k.strip() for k in keywords]
     
-    # 补充：从 tags 字段提取
-    tags_pattern = r'tags: \[([^\]]+)\]'
-    tags_match = re.search(tags_pattern, content)
-    if tags_match:
-        tags_str = tags_match.group(1)
+    # 1. 从标题提取（H1）
+    title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
+    if title_match:
+        title = title_match.group(1)
+        title_keywords = re.findall(r'[知识|图谱|系统|Agent|技能|笔记|认知|智慧|时间|沟通|创造|哲学][图谱|系统|技能|笔记|脉络|链接|统计|分析]*', title)
+        keywords.extend([k for k in title_keywords if len(k) >= 2])
+    
+    # 2. 从 tags 字段提取（支持两种格式）
+    tags_pattern1 = r'tags:\s*\[([^\]]+)\]'
+    tags_match1 = re.search(tags_pattern1, content)
+    if tags_match1:
+        tags_str = tags_match1.group(1)
         tags = re.findall(r'"([^"]+)"', tags_str)
         keywords.extend(tags)
     
-    # 补充：高频词
+    tags_pattern2 = r'tags:\s*\n((?:\s*- .+\n)+)'
+    tags_match2 = re.search(tags_pattern2, content)
+    if tags_match2:
+        tags = re.findall(r'- (.+)', tags_match2.group(1))
+        keywords.extend([t.strip() for t in tags])
+    
+    # 3. 从 ## 关键概念 区块提取
+    concept_pattern = r'## 关键概念\n([\s\S]*?)(?:\n---|\n## |$)'
+    concept_match = re.search(concept_pattern, content)
+    if concept_match:
+        bullet_pattern = r'- \*\*([^*]+)\*\* →'
+        concept_keywords = re.findall(bullet_pattern, concept_match.group(1))
+        keywords.extend([k.strip() for k in concept_keywords])
+    
+    # 4. 从 ## 核心主题 提取（旧格式）
+    core_pattern = r'## 核心主题\n([\s\S]*?)(?:\n## |$)'
+    core_match = re.search(core_pattern, content)
+    if core_match:
+        core_keywords = re.findall(r'- (.+)', core_match.group(1))
+        keywords.extend([k.strip() for k in core_keywords])
+    
+    # 5. 高频词补充
     words = re.findall(r'[\u4e00-\u9fa5]{2,8}', content)
     word_freq = Counter(words)
-    high_freq = [w for w, c in word_freq.most_common(20) 
-                 if c >= MIN_MATCH_COUNT and len(w) >= 3]
-    keywords.extend(high_freq[:5])
+    stopwords = {'的', '是', '在', '有', '和', '与', '或', '等', '这', '那', '一个', '什么', '怎么', '如何', '可以', '能够', '已经', '还是', '但是', '因为', '所以', '如果', '那么', '只是', '就是', '不是', '没有', '现在', '之前', '之后', '下面', '上面', '里面', '外面', '一起', '你的', '我的', '他的', '这个', '那个', '这些', '那些', '让你的'}
+    high_freq = [w for w, c in word_freq.most_common(30) 
+                 if c >= MIN_MATCH_COUNT and len(w) >= 3 and w not in stopwords]
+    keywords.extend(high_freq[:8])
     
-    return list(set(keywords))[:15]
+    unique_keywords = list(set(keywords))
+    unique_keywords = [k for k in unique_keywords if len(k) >= 2 and k not in stopwords]
+    
+    return unique_keywords[:20]
 
 def get_semantic_tags(text):
     """从文本提取语义标签"""
@@ -76,12 +99,28 @@ def get_category(file_path, vault_path):
     parts = rel_path.split(os.sep)
     return parts[0] if len(parts) > 1 else "Root"
 
-def scan_vault_for_keywords(vault_path, exclude_note=None):
-    """扫描 vault，建立关键词→笔记映射"""
+def scan_vault_for_keywords(vault_path, exclude_note=None, exclude_dirs=None):
+    """扫描 vault，建立关键词→笔记映射
+    
+    Args:
+        vault_path: vault 根目录
+        exclude_note: 要排除的笔记路径（通常是当前笔记）
+        exclude_dirs: 要排除的目录列表，默认 ['.graphify']
+                       设置为 [] 则不排除任何目录
+    """
+    if exclude_dirs is None:
+        exclude_dirs = ['.graphify']  # 默认排除
+    
     keyword_to_notes = {}
     
     for root, dirs, files in os.walk(vault_path):
-        if '.graphify' in root:
+        # 检查是否要排除此目录
+        skip = False
+        for exclude_dir in exclude_dirs:
+            if exclude_dir in root:
+                skip = True
+                break
+        if skip:
             continue
         
         for file in files:
@@ -109,8 +148,16 @@ def scan_vault_for_keywords(vault_path, exclude_note=None):
     
     return keyword_to_notes
 
-def find_related_notes(new_note_path, vault_path):
-    """找出与新笔记相关的现有笔记"""
+def find_related_notes(new_note_path, vault_path, exclude_dirs=None):
+    """找出与新笔记相关的现有笔记
+    
+    Args:
+        exclude_dirs: 要排除的目录列表，默认 ['.graphify']
+                     设置为 [] 则包含所有目录（用于链接 .graphify 内容）
+    """
+    if exclude_dirs is None:
+        exclude_dirs = ['.graphify']
+    
     with open(new_note_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -118,7 +165,7 @@ def find_related_notes(new_note_path, vault_path):
     
     # 关键词匹配
     new_keywords = extract_keywords(content)
-    keyword_to_notes = scan_vault_for_keywords(vault_path, exclude_note=new_note_path)
+    keyword_to_notes = scan_vault_for_keywords(vault_path, exclude_note=new_note_path, exclude_dirs=exclude_dirs)
     
     note_scores = {}
     for kw in new_keywords:
@@ -134,8 +181,15 @@ def find_related_notes(new_note_path, vault_path):
     my_tags = get_semantic_tags(note_name)
     
     for root, dirs, files in os.walk(vault_path):
-        if '.graphify' in root:
+        # 检查是否要排除此目录
+        skip = False
+        for exclude_dir in exclude_dirs:
+            if exclude_dir in root:
+                skip = True
+                break
+        if skip:
             continue
+        
         for file in files:
             if file.endswith('.md'):
                 other_name = file[:-3]
@@ -217,20 +271,36 @@ def add_wiki_links(note_path, related_notes):
 
 def main():
     if len(sys.argv) < 2:
-        print("使用方法: python wiki_link_builder.py <note_path> [--vault <vault_path>]")
+        print("使用方法: python wiki_link_builder.py <note_path> [--vault <vault_path>] [--include-graphify]")
         print("示例: python wiki_link_builder.py '/mnt/d/obsidian-notes/02-Knowledge/Wisdom/真正的智慧从何而来.md'")
+        print("      python wiki_link_builder.py '/mnt/d/obsidian-notes/03-Material/文章.md' --include-graphify")
+        print("\n选项:")
+        print("  --include-graphify  包含 .graphify 目录中的笔记（用于链接项目文档）")
         return
     
     note_path = sys.argv[1]
-    vault_path = sys.argv[3] if len(sys.argv) >= 4 and sys.argv[2] == '--vault' else DEFAULT_VAULT
+    vault_path = DEFAULT_VAULT
+    exclude_dirs = ['.graphify']  # 默认排除
+    
+    # 解析参数
+    args = sys.argv[2:]
+    for i, arg in enumerate(args):
+        if arg == '--vault' and i + 1 < len(args):
+            vault_path = args[i + 1]
+        elif arg == '--include-graphify':
+            exclude_dirs = []  # 不排除任何目录
     
     if not os.path.exists(note_path):
         print(f"❌ 笔记不存在: {note_path}")
         return
     
     print(f"分析笔记: {os.path.basename(note_path)}")
+    if exclude_dirs:
+        print(f"排除目录: {exclude_dirs}")
+    else:
+        print("包含所有目录（含 .graphify）")
     
-    related_notes = find_related_notes(note_path, vault_path)
+    related_notes = find_related_notes(note_path, vault_path, exclude_dirs)
     
     if not related_notes:
         print("⚠️ 未找到相关笔记")
