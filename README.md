@@ -25,6 +25,24 @@
 
 ***
 
+## 系统架构
+
+![Graphify Architecture](assets/screenshots/Graphify%20Knowledge%20Graph%20System.png)
+
+**核心组件**：
+
+| 层级 | 组件 | 功能 |
+|:---|:---|:---|
+| 输入层 | 飞书/微信/原创 | 外部内容来源 |
+| 协调层 | Hermes Agent | 消息接收、分类路由、审批执行 |
+| 处理层 | note_collector | 分析 → 分类 → 格式化 |
+| 处理层 | wiki_link_builder | 关键词匹配 → Wiki链接建立 |
+| 处理层 | update_graph_html | 扫描Vault → 生成图谱数据 |
+| 存储层 | Obsidian Vault | 笔记持久化存储 |
+| 展示层 | graph.html | vis-network 可视化交互 |
+
+***
+
 ## v2.2.0 新特性
 
 ### 🚀 自动化收录流程
