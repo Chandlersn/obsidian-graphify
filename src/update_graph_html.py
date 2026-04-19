@@ -31,6 +31,36 @@ def extract_wiki_links(content):
     return [m.strip() for m in matches]
 
 
+def extract_wiki_links_with_reasons(content):
+    """提取 '## 相关笔记' 区块中的 Wiki 链接及关联理由
+    
+    新模板格式:
+    ## 相关笔记
+    
+    - [[笔记名]] (关联理由)
+    """
+    wiki_links = []
+    
+    # 匹配 "## 相关笔记" 区块
+    related_pattern = r'## 相关笔记\n([\s\S]*?)(?:\n---|\n## |$)'
+    related_match = re.search(related_pattern, content)
+    
+    if related_match:
+        related_section = related_match.group(1)
+        
+        # 匹配每个 Wiki 链接项 "- [[笔记名]] (理由)"
+        link_pattern = r'-\s*\[\[([^\]]+)\]\]\s*(?:\(([^)]*)\))?'
+        link_matches = re.findall(link_pattern, related_section)
+        
+        for title, reason in link_matches:
+            wiki_links.append({
+                'title': title.strip(),
+                'reason': reason.strip() if reason else ''
+            })
+    
+    return wiki_links
+
+
 def extract_frontmatter(content):
     """提取 YAML frontmatter"""
     if not content.startswith('---'):
@@ -89,7 +119,8 @@ def scan_notes(vault_path):
                 
                 # 提取信息
                 frontmatter = extract_frontmatter(content)
-                wiki_links = extract_wiki_links(content)
+                wiki_links_simple = extract_wiki_links(content)
+                wiki_links_detailed = extract_wiki_links_with_reasons(content)
                 
                 # 笔记名（去除 .md 后缀）
                 note_name = file.replace('.md', '')
@@ -108,8 +139,9 @@ def scan_notes(vault_path):
                     'tooltip': preview,
                     'file_path': os.path.relpath(file_path, vault_path),
                     'type': frontmatter.get('type', 'original'),
-                    'wiki_links': wiki_links,
-                    'connections': len(wiki_links)
+                    'wiki_links': wiki_links_simple,
+                    'wikiLinks': wiki_links_detailed,  # 新增：详细 Wiki 链接信息
+                    'connections': len(wiki_links_simple)
                 })
     
     return notes

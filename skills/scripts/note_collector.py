@@ -13,15 +13,17 @@ import re
 import sys
 import json
 import argparse
+import yaml
 from datetime import datetime
 from pathlib import Path
 
 # ==================== 配置 ====================
 VAULT_PATH = "/mnt/d/obsidian-notes"
 GRAPHIFY_DIR = os.path.join(VAULT_PATH, ".graphify")
+CONFIG_PATH = os.path.join(GRAPHIFY_DIR, "github-repo", "config", "config.yaml")
 
-# 分类规则
-CATEGORY_RULES = {
+# 默认分类规则（向后兼容）
+DEFAULT_CATEGORY_RULES = {
     "Knowledge": {
         "keywords": ["知识", "概念", "原理", "方法", "技巧", "理论", "AI", "LLM", "架构", "设计"],
         "subcategories": {
@@ -56,11 +58,34 @@ CATEGORY_RULES = {
         }
     }
 }
+
+def load_category_rules():
+    """从 config.yaml 加载分类规则，失败则返回默认规则"""
+    try:
+        if os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+                if config and 'categories' in config:
+                    # 转换 config.yaml 格式为内部格式
+                    rules = {}
+                    for cat, cat_config in config['categories'].items():
+                        rules[cat] = {
+                            'keywords': cat_config.get('keywords', []),
+                            'subcategories': {}
+                        }
+                        for subcat, subcat_config in cat_config.get('subcategories', {}).items():
+                            rules[cat]['subcategories'][subcat] = subcat_config.get('keywords', [])
+                    return rules
+    except Exception as e:
+        print(f"[Warning] Failed to load config.yaml: {e}, using default rules")
+    
+    return DEFAULT_CATEGORY_RULES
 # ==============================================
 
 class NoteCollector:
     def __init__(self, vault_path=VAULT_PATH):
         self.vault_path = vault_path
+        self.category_rules = load_category_rules()
         
     def analyze_content(self, content, title):
         """分析内容，提取关键信息"""
@@ -107,7 +132,7 @@ class NoteCollector:
         best_subcategory = "Articles"
         best_score = 0
         
-        for cat, rules in CATEGORY_RULES.items():
+        for cat, rules in self.category_rules.items():
             cat_score = sum(1 for kw in rules["keywords"] if kw in text)
             
             for subcat, sub_kw in rules["subcategories"].items():

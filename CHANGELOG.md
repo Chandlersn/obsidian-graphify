@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-04-19
+
+**Repository maintenance and fixes.**
+
+### Fixed
+
+|| # | Issue | Fix |
+||---|-------|-----|
+|| 01 | feishu_importer.py truncated code | Line 31: `os.environ.get('FEISHU_TOKEN', '')` |
+|| 02 | graphify.sh missing | Created unified CLI entry script (70+ lines) |
+|| 03 | demo_notes incomplete | Added Wisdom/Architecture notes, Templates |
+|| 04 | CATEGORY_RULES hardcoded | note_collector.py now reads from config.yaml |
+
+### Added
+
+- `config.yaml` expanded with full category rules structure
+- `skills/scripts/graphify.sh` - unified CLI entry point
+- Demo notes:
+  - `02-Knowledge/Wisdom/真正的智慧从何而来.md`
+  - `02-Knowledge/Wisdom/认知体系的建立.md`
+  - `02-Knowledge/Architecture/模块化架构设计原则.md`
+  - `05-Templates/知识笔记模板.md`
+  - `05-Templates/项目笔记模板.md`
+
+### Changed
+
+- `note_collector.py` uses `load_category_rules()` function
+- Categories now configurable via `config.yaml` (no more hardcoded rules)
+- Better error handling with fallback to default rules
+
+---
+
 ## [1.0.0] - 2026-04-16
 
 **First stable release.**
@@ -96,10 +128,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Summary
 
-| Version | Date | Description | Features |
-|---------|------|-------------|----------|
-| 1.0.0 | 2026-04-16 | First stable release | 12 core features |
-| 0.9.0 | 2026-04-15 | Beta version | 4 basic features |
+|| Version | Date | Description | Features ||
+||---------|------|-------------|----------||
+|| 1.1.0 | 2026-04-19 | Repository maintenance | 4 fixes, 5 demo notes ||
+|| 1.0.0 | 2026-04-16 | First stable release | 12 core features ||
+|| 0.9.0 | 2026-04-15 | Beta version | 4 basic features ||
 
 ---
 

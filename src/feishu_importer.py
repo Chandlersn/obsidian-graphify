@@ -29,7 +29,7 @@ except ImportError:
 
 # ==================== 用户配置 ====================
 FEISHU_API_TOKEN = os.environ.get('FEISHU_TOKEN', '')
-SAVE_DIR = "/path/to/your/obsidian-notes/04-Materials/Feishu"
+SAVE_DIR = "/mnt/d/obsidian-notes/04-Materials/Feishu"
 # ================================================
 
 

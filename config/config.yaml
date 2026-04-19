@@ -3,7 +3,7 @@
 # ==================== Obsidian Vault ====================
 obsidian:
   # 你的 Obsidian vault 路径
-  vault_path: "/path/to/your/obsidian-notes"
+  vault_path: "/mnt/d/obsidian-notes"
   
   # 是否启用自动更新
   auto_update: true
@@ -61,7 +61,7 @@ features:
   # 路径追踪
   path_tracing: true
   
-  # 热度统计
+  # 留度统计
   heat_map: true
   
   # 影响力分析
@@ -72,3 +72,116 @@ features:
   
   # PNG 导出
   export_png: true
+
+# ==================== 分类规则 ====================
+# 定义笔记自动分类的关键词匹配规则
+categories:
+  Knowledge:
+    keywords:
+      - "知识"
+      - "概念"
+      - "原理"
+      - "方法"
+      - "技巧"
+      - "理论"
+      - "AI"
+      - "LLM"
+      - "架构"
+      - "设计"
+    subcategories:
+      Wisdom:
+        keywords:
+          - "智慧"
+          - "认知"
+          - "哲学"
+          - "思考"
+          - "道理"
+          - "人生"
+          - "顿悟"
+          - "开窍"
+      AI-ML:
+        keywords:
+          - "AI"
+          - "机器学习"
+          - "LLM"
+          - "模型"
+          - "Agent"
+          - "神经网络"
+      Architecture:
+        keywords:
+          - "架构"
+          - "系统设计"
+          - "分布式"
+          - "微服务"
+      Tools:
+        keywords:
+          - "工具"
+          - "技巧"
+          - "Obsidian"
+          - "Git"
+          - "Python"
+      Research:
+        keywords:
+          - "研究"
+          - "论文"
+          - "实验"
+          - "方法论"
+  
+  Projects:
+    keywords:
+      - "项目"
+      - "开发"
+      - "实现"
+      - "集成"
+      - "部署"
+      - "Graphify"
+      - "Hermes"
+    subcategories:
+      Graphify:
+        keywords:
+          - "Graphify"
+          - "图谱"
+          - "知识图谱"
+      Hermes-Agent:
+        keywords:
+          - "Hermes"
+          - "Agent"
+          - "飞书"
+      Integration:
+        keywords:
+          - "集成"
+          - "对接"
+          - "API"
+  
+  Materials:
+    keywords: []
+    subcategories:
+      Articles:
+        keywords:
+          - "文章"
+          - "收藏"
+      Feishu:
+        keywords:
+          - "飞书"
+      References:
+        keywords:
+          - "参考"
+          - "API文档"
+  
+  System:
+    keywords:
+      - "系统"
+      - "配置"
+      - "核心"
+      - "设计理念"
+      - "SOUL"
+    subcategories:
+      Core:
+        keywords:
+          - "核心"
+          - "SOUL"
+          - "设计理念"
+      Config:
+        keywords:
+          - "配置"
+          - "技能"
