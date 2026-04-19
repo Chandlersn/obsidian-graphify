@@ -25,6 +25,65 @@
 
 ***
 
+## v2.2.0 新特性
+
+### 🚀 自动化收录流程
+
+一键完成：**分析 → 分类 → 格式化 → Wiki链接 → 图谱更新 → 浏览器展示**
+
+```bash
+# 收录微信文章
+python3 skills/scripts/note_collector.py \
+  --title "文章标题" \
+  --content "文章内容" \
+  --source "wechat" \
+  --author "作者名"
+```
+
+### 📝 简化模板格式
+
+YAML 从 17 行精简到 4 行，正文直接呈现：
+
+```markdown
+---
+type: original
+created: 2026-04-19
+tags: ["标签1", "标签2"]
+---
+
+# 笔记标题
+
+> 一句话核心观点。
+
+正文段落...
+
+---
+
+正文段落（段落间用 --- 分隔）...
+
+## 关键概念
+
+- **概念名** → 简要解释
+
+---
+
+## 相关笔记
+
+- [[笔记名]] (关联理由)
+
+---
+```
+
+### 🔗 Wiki 链接自动建立
+
+基于关键词和语义匹配，自动关联相关笔记：
+
+```bash
+python3 skills/scripts/wiki_link_builder.py "/path/to/note.md"
+```
+
+***
+
 ## 为什么做这个
 
 传统笔记软件只解决「存储」问题：文件夹、标签、搜索。但没有解决「连接」问题。
@@ -33,72 +92,75 @@
 当你有 50 条笔记时，就会开始遗忘。
 当你有 100+ 条笔记时，它们自然就成了孤岛。
 
-而Graphify ，就是把单个的笔记，变成一了张知识网络：
+而 Graphify，就是把单个的笔记，变成一张知识网络：
 
 - **可视化** — 一张图看清所有知识
 - **路径追踪** — BFS 最短路径，发现知识脉络
 - **孤岛检测** — 高亮无连接节点，知道哪里需要补链接
 - **热度统计** — 点击记录，显示你最关注的领域
-- **影响力分析** — 通过计算你的点击数，进行PageRank 式排名，知道哪个知识点是你的核心，
+- **影响力分析** — PageRank 式排名，知道哪个知识点是你的核心
+- **自动化收录** — 一键完成收录全流程
 
 ***
 
 ## 从存储到连接
 
-| 传统笔记软件  | Graphify | 为什么这样设计              |
+| 传统笔记软件 | Graphify | 为什么这样设计 |
 | :------ | :------- | :------------------- |
-| 文件夹树状结构 | 网状图谱     | 知识本来就是网状的            |
-| 搜索关键词   | 点击节点直达   | 搜索需要知道关键词，图谱可以发现不知道的 |
-| 标签分类    | 动态分类筛选   | 分类是静态的，图谱是动态生长的      |
-| 笔记是孤岛   | 笔记是节点    | 孤岛之间没有路，节点之间有路径      |
-| 靠记忆找关联  | 路径追踪算法   | 记忆会遗忘，算法不会           |
+| 文件夹树状结构 | 网状图谱 | 知识本来就是网状的 |
+| 搜索关键词 | 点击节点直达 | 搜索需要知道关键词，图谱可以发现不知道的 |
+| 标签分类 | 动态分类筛选 | 分类是静态的，图谱是动态生长的 |
+| 笔记是孤岛 | 笔记是节点 | 孤岛之间没有路，节点之间有路径 |
+| 靠记忆找关联 | 路径追踪算法 | 记忆会遗忘，算法不会 |
+| 手动整理格式 | 自动化收录 | 重复工作交给脚本 |
 
 ***
 
-## 12 个核心功能
+## 14 个核心功能
 
-| #  | 功能          | 说明                          |
+| # | 功能 | 说明 |
 | :- | :---------- | :-------------------------- |
-| 01 | **3级文件夹结构** | 原创/收藏分离，结构化管理笔记             |
-| 02 | **可视化图谱**   | vis-network 渲染，一张图看清所有知识网络  |
-| 03 | **快速搜索**    | Ctrl+K 秒级定位任意节点             |
-| 04 | **分类筛选**    | 动态渲染按钮，自动同步笔记分类             |
-| 05 | **路径追踪**    | BFS 最短路径，发现知识脉络             |
-| 06 | **热度统计**    | localStorage 点击记录，显示你最关注的领域 |
-| 07 | **孤岛检测**    | 高亮无连接节点，发现需要建立链接的内容         |
-| 08 | **影响力分析**   | PageRank 式排名，知道哪个知识点最核心     |
-| 09 | **主题切换**    | 深色/浅色模式，Linear 设计风格         |
-| 10 | **飞书导入**    | 自动保存有价值消息到笔记库               |
-| 11 | **PNG 导出**  | 保存图谱图片，分享知识结构               |
-| 12 | **自动更新**    | watchdog 监控，实时同步图谱          |
+| 01 | **3级文件夹结构** | 原创/收藏分离，结构化管理笔记 |
+| 02 | **可视化图谱** | vis-network 渲染，一张图看清所有知识网络 |
+| 03 | **快速搜索** | Ctrl+K 秒级定位任意节点 |
+| 04 | **分类筛选** | 动态渲染按钮，自动同步笔记分类 |
+| 05 | **路径追踪** | BFS 最短路径，发现知识脉络 |
+| 06 | **热度统计** | localStorage 点击记录，显示你最关注的领域 |
+| 07 | **孤岛检测** | 高亮无连接节点，发现需要建立链接的内容 |
+| 08 | **影响力分析** | PageRank 式排名，知道哪个知识点最核心 |
+| 09 | **主题切换** | 深色/浅色模式，Linear 设计风格 |
+| 10 | **飞书导入** | 自动保存有价值消息到笔记库 |
+| 11 | **PNG 导出** | 保存图谱图片，分享知识结构 |
+| 12 | **自动更新** | watchdog 监控，实时同步图谱 |
+| 13 | **自动化收录** | 一键完成收录全流程 |
+| 14 | **Wiki 链接建立** | 自动关联相关笔记 |
 
 ***
 
 ## 技术栈
 
-| 组件   | 技术                  | 为什么选它         |
+| 组件 | 技术 | 为什么选它 |
 | :--- | :------------------ | :------------ |
-| 可视化  | vis-network v9.1.9  | 轻量、高性能、支持物理模拟 |
-| 设计风格 | Linear.app          | 深色/浅色主题，干净现代  |
-| 后端   | Python 3.x          | 简单、跨平台、易扩展    |
-| 自动更新 | watchdog            | 文件监控，实时响应     |
-| 集成   | Obsidian URI scheme | 点击节点直接打开笔记    |
-| 存储   | localStorage        | 无需数据库，纯本地     |
+| 可视化 | vis-network v9.1.9 | 轻量、高性能、支持物理模拟 |
+| 设计风格 | Linear.app | 深色/浅色主题，干净现代 |
+| 后端 | Python 3.x | 简单、跨平台、易扩展 |
+| 自动更新 | watchdog | 文件监控，实时响应 |
+| 集成 | Obsidian URI scheme | 点击节点直接打开笔记 |
+| 存储 | localStorage | 无需数据库，纯本地 |
+| 自动收录 | note_collector.py | 分析、分类、格式化、链接、更新 |
 
 ***
 
 ## 安装前提
 
-| 前置条件         | 版本要求 | 检查方式                | 说明   |
+| 前置条件 | 版本要求 | 检查方式 | 说明 |
 | :----------- | :--- | :------------------ | :--- |
-| **Obsidian** | 任意版本 | 已安装并有一个 vault       | 笔记软件 |
-| **Python**   | 3.6+ | `python3 --version` | 运行脚本 |
-| **pip**      | 任意   | `pip3 --version`    | 安装依赖 |
-| **Git**      | 任意   | `git --version`     | 克隆仓库 |
+| **Obsidian** | 任意版本 | 已安装并有一个 vault | 笔记软件 |
+| **Python** | 3.6+ | `python3 --version` | 运行脚本 |
+| **pip** | 任意 | `pip3 --version` | 安装依赖 |
+| **Git** | 任意 | `git --version` | 克隆仓库 |
 
 > 💡 **仓库地址**: `https://github.com/Chandlersn/obsidian-graphify`
->
-> 克隆后无需额外安装 Graphify，所有核心代码都在仓库 `src/` 目录中。
 
 ***
 
@@ -111,30 +173,42 @@
 git clone https://github.com/Chandlersn/obsidian-graphify.git
 cd obsidian-graphify
 
-# 运行安装脚本（自动安装依赖 + 配置路径 + 生成图谱）
+# 运行安装脚本
 chmod +x scripts/install.sh
 ./scripts/install.sh
 ```
 
-安装过程中会提示你输入 Obsidian vault 路径，例如：
+安装过程中会提示你输入 Obsidian vault 路径。
 
-- macOS: `/Users/yourname/Documents/obsidian-notes`
-- Windows: `D:/Documents/obsidian-notes`
-- Linux: `/home/yourname/obsidian-notes`
-
-安装完成后：
+### 收录文章
 
 ```bash
-# 打开图谱页面（显示你的笔记网络）
-open /path/to/your/vault/.graphify/graph_fixed_beautiful.html
+# 收录原创内容
+python3 skills/scripts/note_collector.py \
+  --title "我的思考" \
+  --content "正文内容..." \
+  --source "user"
 
-# 启动自动更新守护进程（可选，实时同步）
-python3 /path/to/your/vault/.graphify/auto_update.py /path/to/your/vault &
+# 收录微信文章（会询问处理方式）
+python3 skills/scripts/note_collector.py \
+  --title "文章标题" \
+  --content "文章内容..." \
+  --source "wechat" \
+  --author "作者名"
 ```
 
-### 手动安装
+### 更新图谱
 
-详见 [快速开始指南](docs/getting-started.md)。
+```bash
+# 更新图谱
+python3 src/update_graph_html.py "/path/to/vault"
+
+# 打开浏览器
+# Windows (WSL)
+cmd.exe /c start "" "D:\\vault\\.graphify\\graph.html"
+# macOS
+open /path/to/vault/.graphify/graph.html
+```
 
 ***
 
@@ -149,27 +223,29 @@ obsidian-graphify/
 │   └── screenshots/       # 截图演示
 ├── config/
 │   └── config.yaml        # 配置文件
-├── demo_notes/            # 示例笔记（演示 3 级结构）
-│   ├── 01-System/
-│   ├── 02-Knowledge/
-│   ├── 03-Projects/
-│   └── 04-Materials/
+├── demo_notes/            # 示例笔记
 ├── docs/                  # 详细文档
 │   ├── getting-started.md
 │   ├── folder-structure.md
 │   ├── features.md
-│   ├── customization.md
-│   └── troubleshooting.md
+│   ├── metadata-spec.md   # v2.2 元数据规范
+│   └ customization.md
+│   └ troubleshooting.md
 ├── scripts/
-│   └── install.sh         # 安装脚本
+│   └ install.sh           # 安装脚本
 ├── skills/
-│   └── SKILL.md           # Agent Skill 定义
-└── src/                   # 核心代码
-    ├── graph_fixed_beautiful.html  # 图谱页面
-    ├── update_graph_html.py        # 图谱生成脚本
-    ├── auto_update.py              # 自动更新守护进程
-    ├── feishu_importer.py          # 飞书导入
-    └ templates/                   # 笔记模板
+│   ├── SKILL.md           # Agent Skill 定义 v2.2
+│   └ scripts/
+│       ├── note_collector.py    # 核心收录脚本
+│       ├── wiki_link_builder.py # Wiki 链接建立
+│       ├── update_graph_html.py # 图谱生成
+│       └ graphify.sh           # 快捷入口
+└── src/
+    ├── graph.html         # 图谱页面
+    ├── templates/
+    │   └ 笔记模板.md      # 简化模板（唯一）
+    └ feishu_importer.py   # 飞书导入
+    └ auto_update.py       # 自动更新守护进程
 ```
 
 ***
@@ -180,23 +256,26 @@ obsidian-graphify/
 obsidian-notes/
 ├── 01-System/          # 系统核心
 ├── 02-Knowledge/       # 知识领域
+│   ├── Wisdom/         # 智慧、认知、哲学
+│   ├── AI-ML/          # AI、机器学习
+│   ├── Architecture/   # 架构、系统设计
+│   └ Tools/            # 工具、技巧
 ├── 03-Projects/        # 项目文档
 ├── 04-Materials/       # 收藏素材
+│   ├── Articles/       # 外来文章
 ├── 05-Templates/       # 笔记模板
 └── .graphify/          # 图谱系统
 ```
-
-详见 [文件夹结构设计理念](docs/folder-structure.md)。
 
 ***
 
 ## 截图
 
-|                    深色主题                   |                     浅色主题                    |
+| 深色主题 | 浅色主题 |
 | :---------------------------------------: | :-----------------------------------------: |
 | ![Dark](assets/screenshots/dark-mode.png) | ![Light](assets/screenshots/light-mode.png) |
 
-|                     路径追踪                     |                   热度统计                   |
+| 路径追踪 | 热度统计 |
 | :------------------------------------------: | :--------------------------------------: |
 | ![Path](assets/screenshots/path-tracing.png) | ![Heat](assets/screenshots/heat-map.png) |
 
@@ -206,7 +285,8 @@ obsidian-notes/
 
 - [快速开始](docs/getting-started.md) — 详细安装指南
 - [文件夹结构](docs/folder-structure.md) — 3 级结构设计理念
-- [功能详解](docs/features.md) — 12 个功能完整说明
+- [功能详解](docs/features.md) — 14 个功能完整说明
+- [元数据规范](docs/metadata-spec.md) — v2.2 简化模板格式
 - [自定义配置](docs/customization.md) — 修改颜色、字体、分类
 - [常见问题](docs/troubleshooting.md) — FAQ
 
@@ -222,6 +302,7 @@ Graphify 把 Ted Nelson 的超文本理念落地到 Obsidian：
 - **双向链接** — `[[笔记名]]` 创建节点和边
 - **可视化** — 把隐藏的网络变成可见的图谱
 - **发现** — 路径追踪、孤岛检测、影响力分析
+- **自动化** — 收录、格式化、链接、更新一键完成
 
 ***
 
