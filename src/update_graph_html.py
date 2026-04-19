@@ -17,10 +17,10 @@ from pathlib import Path
 
 # ==================== 用户配置 ====================
 # 修改这里为你的 Obsidian vault 路径
-OBSIDIAN_VAULT = "/path/to/your/obsidian-notes"
+OBSIDIAN_VAULT = "/mnt/d/obsidian-notes"
 GRAPHIFY_DIR = os.path.join(OBSIDIAN_VAULT, ".graphify")
-HTML_TEMPLATE = os.path.join(GRAPHIFY_DIR, "graph_template.html")
-OUTPUT_HTML = os.path.join(GRAPHIFY_DIR, "graph_fixed_beautiful.html")
+HTML_TEMPLATE = os.path.join(GRAPHIFY_DIR, "graph_fixed_beautiful.html")
+OUTPUT_HTML = os.path.join(GRAPHIFY_DIR, "graph.html")
 # ================================================
 
 
@@ -169,7 +169,7 @@ def update_html(graph_data, template_path, output_path, vault_name=None):
     # 如果正则匹配失败，尝试更宽松的匹配
     if new_html == html_content:
         # 使用标记区域替换
-        start_marker = '// ========== Dynamic data area - will be replaced by update script =========='
+        start_marker = '// ========== Dynamic data area - modify directly here =========='
         end_marker = '// ======================================================'
         
         start_idx = html_content.find(start_marker)
@@ -224,8 +224,14 @@ def main():
     
     graph_data = generate_graph_data(vault_path)
     
-    # 模板和输出使用同一个文件（自我更新）
-    template_path = OUTPUT_HTML
+    # 模板使用 graph_fixed_beautiful.html，输出到 graph.html
+    template_path = HTML_TEMPLATE
+    
+    # 如果输出文件不存在，先复制模板
+    if not os.path.exists(OUTPUT_HTML):
+        import shutil
+        shutil.copy(HTML_TEMPLATE, OUTPUT_HTML)
+        print(f"   初始化: 从模板创建 {OUTPUT_HTML}")
     
     update_html(graph_data, template_path, OUTPUT_HTML, vault_name)
 
