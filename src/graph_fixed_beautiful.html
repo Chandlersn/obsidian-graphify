@@ -352,6 +352,65 @@
             border: 1px solid rgba(255,255,255,0.05);
         }
         
+        /* Wiki Links Section */
+        .wiki-links-section {
+            margin-top: 16px;
+            display: none;  /* 默认隐藏，有数据时显示 */
+        }
+        
+        .wiki-links-section.has-links {
+            display: block;
+        }
+        
+        .wiki-links-header {
+            font-size: 12px;
+            font-weight: 510;
+            color: #62666d;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            padding-left: 2px;
+        }
+        
+        #wikiLinksList {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .wiki-link-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(94, 106, 210, 0.1);
+            border: 1px solid rgba(94, 106, 210, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .wiki-link-item:hover {
+            background: rgba(94, 106, 210, 0.15);
+            border-color: rgba(94, 106, 210, 0.3);
+        }
+        
+        .wiki-link-icon {
+            color: #5e6ad2;
+            font-size: 14px;
+        }
+        
+        .wiki-link-title {
+            font-size: 13px;
+            font-weight: 510;
+            color: #f7f8f8;
+        }
+        
+        .wiki-link-reason {
+            font-size: 11px;
+            color: #8a8f98;
+            margin-left: auto;
+        }
+        
         /* Action Buttons in Modal */
         .modal-actions {
             display: flex;
@@ -532,6 +591,10 @@
         <h2 id="nodeTitle">节点标题</h2>
         <span id="nodeCategory">分类</span>
         <p id="nodePreview">预览内容...</p>
+        <div id="nodeWikiLinks" class="wiki-links-section">
+            <div class="wiki-links-header">相关笔记</div>
+            <div id="wikiLinksList"></div>
+        </div>
         <div class="modal-actions">
             <button class="btn-open" onclick="openInObsidian()">在 Obsidian 打开</button>
             <button class="btn-close" onclick="closeModal()">关闭</button>
@@ -547,10 +610,285 @@
         const OBSIDIAN_VAULT_NAME = "obsidian-notes";
         
         // ========== Dynamic data area - modify directly here ==========
+        // 自动生成 - 请勿手动修改
         const graphData = {
-                "nodes": [{"id": 1, "label": "README", "group": "Root", "tooltip": "基于 Graphify 的交互式知识图谱笔记系统。 ``` obsidian-notes/", "file_path": "README.md", "type": "original", "connections": 0}, {"id": 2, "label": "知识笔记", "group": "General", "tooltip": "> 知识点摘要 - [[]] -", "file_path": "04-Templates/知识笔记.md", "type": "original", "connections": 0}, {"id": 3, "label": "通用笔记", "group": "General", "tooltip": "> 简要描述这个笔记的主题和目的 - -", "file_path": "04-Templates/通用笔记.md", "type": "original", "connections": 0}, {"id": 4, "label": "项目笔记", "group": "General", "tooltip": "> 项目简介：一句话描述项目目标 **目标**： **背景**：", "file_path": "04-Templates/项目笔记.md", "type": "original", "connections": 0}, {"id": 5, "label": "SOUL", "group": "System", "tooltip": "- [[Graphify 知识图谱系统]] - [[LLM-Wiki 个人知识库系统设计]] > **版本**: 1.0", "file_path": "01-System/Core/SOUL.md", "type": "original", "connections": 1}, {"id": 6, "label": "LLM-Wiki-System", "group": "AI-ML", "tooltip": "个人知识库系统，整合飞书、Obsidian、Hermes Agent和LLM Wiki功能。 - [[飞书集成]] - [[Obsidian知识库]]", "file_path": "02-Knowledge/AI-ML/LLM-Wiki-System.md", "type": "original", "connections": 4}, {"id": 7, "label": "LLM-Wiki个人知识库系统设计", "group": "Architecture", "tooltip": "- [[LLM-Wiki-System]] - [[飞书集成]] - [[Obsidian 知识库]]", "file_path": "02-Knowledge/Architecture/LLM-Wiki个人知识库系统设计.md", "type": "original", "connections": 6}, {"id": 8, "label": "图谱数据模型", "group": "Architecture", "tooltip": "- [[Graphify 知识图谱系统]] - [[自动分类引擎]] ```json", "file_path": "02-Knowledge/Architecture/图谱数据模型.md", "type": "original", "connections": 4}, {"id": 9, "label": "Obsidian知识库", "group": "Tools", "tooltip": "- [[LLM-Wiki 个人知识库系统设计]] - [[飞书集成]] ```", "file_path": "02-Knowledge/Tools/Obsidian知识库.md", "type": "original", "connections": 3}, {"id": 10, "label": "Graphify知识图谱系统", "group": "Graphify", "tooltip": "Graphify是一个知识图谱可视化系统，将Obsidian笔记转换为交互式HTML图谱，支持： - 自动节点分类和布局 - 双向链接跳转（图谱 ↔ Obsidian）", "file_path": "03-Projects/Graphify/Graphify知识图谱系统.md", "type": "original", "connections": 3}, {"id": 11, "label": "HTML 可视化渲染", "group": "Graphify", "tooltip": "Graphify 图谱的 HTML 渲染组件，负责： - 使用 vis-network 库渲染交互式图谱 - 节点分类着色和布局", "file_path": "03-Projects/Graphify/HTML 可视化渲染.md", "type": "original", "connections": 1}, {"id": 12, "label": "HTML可视化渲染", "group": "Graphify", "tooltip": "无内容预览", "file_path": "03-Projects/Graphify/HTML可视化渲染.md", "type": "original", "connections": 1}, {"id": 13, "label": "自动分类引擎", "group": "Graphify", "tooltip": "- [[图谱数据模型]] - [[Graphify 知识图谱系统]] - **AI/ML相关**：包含 \"neural\", \"transformer\", \"LLM\", \"machine learning\", \"深度学习\" → `Knowledge/AI-ML/`", "file_path": "03-Projects/Graphify/自动分类引擎.md", "type": "original", "connections": 3}, {"id": 14, "label": "Hermes 协调层", "group": "Hermes-Agent", "tooltip": "Hermes Agent 作为系统协调层，负责： - 飞书消息接收和处理 - 内容分类和路由", "file_path": "03-Projects/Hermes-Agent/Hermes 协调层.md", "type": "original", "connections": 4}, {"id": 15, "label": "Hermes协调层", "group": "Hermes-Agent", "tooltip": "无内容预览", "file_path": "03-Projects/Hermes-Agent/Hermes协调层.md", "type": "original", "connections": 2}, {"id": 16, "label": "飞书集成", "group": "Integration", "tooltip": "- [[Hermes 协调层]] - [[LLM-Wiki 个人知识库系统设计]] - [[Obsidian 知识库]]", "file_path": "03-Projects/Integration/飞书集成.md", "type": "original", "connections": 6}, {"id": 17, "label": "这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。_20260416_134709", "group": "Materials", "tooltip": "> 来源：飞书 test > 导入时间：2026-04-16 13:47:09 这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。", "file_path": "04-Materials/Feishu/这是一条来自飞书的测试消息，包含重要知识点：AI技术发展趋势、知识图谱应用、智能笔记系统。_20260416_134709.md", "type": "collected", "connections": 0}],
-                "edges": [{"from": 6, "to": 16}, {"from": 6, "to": 9}, {"from": 6, "to": 15}, {"from": 7, "to": 6}, {"from": 7, "to": 16}, {"from": 7, "to": 14}, {"from": 7, "to": 16}, {"from": 7, "to": 9}, {"from": 7, "to": 15}, {"from": 8, "to": 13}, {"from": 9, "to": 16}, {"from": 10, "to": 8}, {"from": 10, "to": 13}, {"from": 10, "to": 12}, {"from": 11, "to": 8}, {"from": 13, "to": 8}, {"from": 14, "to": 16}, {"from": 14, "to": 5}, {"from": 16, "to": 14}]
-            };
+    "nodes": [
+        {
+            "id": 1,
+            "label": "README",
+            "group": "General",
+            "tooltip": "# Obsidian Notes 知识库\n\n基于 Graphify 的交互式知识图谱笔记系统。\n\n## 文件夹结构\n\n```\nobsidian-notes/\n├── 01-System/",
+            "file_path": "README.md",
+            "type": "original",
+            "wiki_links": [
+                "目标笔记标题",
+                "其他笔记"
+            ],
+            "wikiLinks": [],
+            "connections": 2
+        },
+        {
+            "id": 2,
+            "label": "SOUL",
+            "group": "System",
+            "tooltip": "# Graphify SOUL - 知识图谱系统的灵魂\n## 相关链接\n- [[Graphify 知识图谱系统]]\n- [[LLM-Wiki 个人知识库系统设计]]\n\n> **版本**: 1.0",
+            "file_path": "01-System/Core/SOUL.md",
+            "type": "original",
+            "wiki_links": [
+                "Graphify 知识图谱系统",
+                "LLM-Wiki 个人知识库系统设计"
+            ],
+            "wikiLinks": [],
+            "connections": 2
+        },
+        {
+            "id": 3,
+            "label": "人的认知到底是如何转变的",
+            "group": "Knowledge",
+            "tooltip": "# 人的认知到底是如何转变的\n\n> 认知转变不是渐进过程，而是顿悟式的飞跃。当大脑神经元连接成网，新的理解瞬间涌现。\n\n人的认知，不止是思想和模型，而更应该是感受和直觉！思想和模型，只是你为了理解这",
+            "file_path": "02-Knowledge/Wisdom/人的认知到底是如何转变的.md",
+            "type": "original",
+            "wiki_links": [
+                "你的认知体系是怎么长出来的"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "你的认知体系是怎么长出来的",
+                    "reason": "认知成长"
+                }
+            ],
+            "connections": 1
+        },
+        {
+            "id": 4,
+            "label": "从道理之争到智慧之境",
+            "group": "Knowledge",
+            "tooltip": "# 从道理之争到智慧之境\n\n> 道理之争往往陷入逻辑对立，而智慧之境超越对立，理解每个道理背后的真实情境。\n\n很多人搞不清，讲道理的真实用途。大多数人，总想追求一个确定的结果，希望有句\"确定无疑\"的",
+            "file_path": "02-Knowledge/Wisdom/从道理之争到智慧之境.md",
+            "type": "original",
+            "wiki_links": [
+                "沟通的艺术如何让道理被真正听见",
+                "真正的智慧从何而来"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "沟通的艺术如何让道理被真正听见",
+                    "reason": "智慧、沟通"
+                },
+                {
+                    "title": "真正的智慧从何而来",
+                    "reason": "智慧"
+                }
+            ],
+            "connections": 2
+        },
+        {
+            "id": 5,
+            "label": "你的认知体系是怎么长出来的",
+            "group": "Knowledge",
+            "tooltip": "# 你的认知体系是怎么长出来的\n\n> 认知体系不是被动接收知识，而是主动构建的思维框架。每次新知识的吸收都在重塑整个网络。\n\n30岁前：我们都在\"攒面粉\"\n\n回想一下，30岁之前，我们学的东西像什么",
+            "file_path": "02-Knowledge/Wisdom/你的认知体系是怎么长出来的.md",
+            "type": "original",
+            "wiki_links": [
+                "人的认知到底是如何转变的"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "人的认知到底是如何转变的",
+                    "reason": "认知"
+                }
+            ],
+            "connections": 1
+        },
+        {
+            "id": 6,
+            "label": "创造力如何才能拥有",
+            "group": "Knowledge",
+            "tooltip": "# 创造力如何才能拥有\n\n> 创造力不是天赋，而是思维习惯。打破惯性思维，连接不同领域，灵感自然涌现。\n\n创造力不是什么稀缺的能力，而是你缺乏看到创造力的视角，提取不到它的存在，因此，认为我没有。人",
+            "file_path": "02-Knowledge/Wisdom/创造力如何才能拥有.md",
+            "type": "original",
+            "wiki_links": [
+                "人的认知到底是如何转变的",
+                "你的认知体系是怎么长出来的"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "人的认知到底是如何转变的",
+                    "reason": "认知视角转变"
+                },
+                {
+                    "title": "你的认知体系是怎么长出来的",
+                    "reason": "精神能量"
+                }
+            ],
+            "connections": 2
+        },
+        {
+            "id": 7,
+            "label": "客观时间与意识时间的差别影响",
+            "group": "Knowledge",
+            "tooltip": "# 客观时间与意识时间的差别影响\n\n> 客观时间是物理测量，意识时间是主观感知。精神高度集中时，时间感会发生扭曲。\n\n我们的肉体栖居于同一片物理空间，但每个人的意识与灵魂，却活在截然不同的 \"意识时",
+            "file_path": "02-Knowledge/Wisdom/客观时间与意识时间的差别影响.md",
+            "type": "original",
+            "wiki_links": [
+                "人的认知到底是如何转变的",
+                "你的认知体系是怎么长出来的"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "人的认知到底是如何转变的",
+                    "reason": "认知跃迁"
+                },
+                {
+                    "title": "你的认知体系是怎么长出来的",
+                    "reason": "精神坐标"
+                }
+            ],
+            "connections": 2
+        },
+        {
+            "id": 8,
+            "label": "沟通的艺术如何让道理被真正听见",
+            "group": "Knowledge",
+            "tooltip": "# 沟通的艺术如何让道理被真正听见\n\n> 讲道理的本质是\"围着道理讲事实\"。不直接讲道理，而是讲道理周围的事实，让道理自己显出来。\n\n讲道理，通常很容易变成说教。问题不在于道理本身，而在于传递的方式",
+            "file_path": "02-Knowledge/Wisdom/沟通的艺术如何让道理被真正听见.md",
+            "type": "original",
+            "wiki_links": [
+                "从道理之争到智慧之境",
+                "真正的智慧从何而来"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "从道理之争到智慧之境",
+                    "reason": "智慧、沟通"
+                },
+                {
+                    "title": "真正的智慧从何而来",
+                    "reason": "智慧"
+                }
+            ],
+            "connections": 2
+        },
+        {
+            "id": 9,
+            "label": "真正的智慧从何而来",
+            "group": "Knowledge",
+            "tooltip": "# 真正的智慧从何而来\n\n> 真正的智慧来源于不加思索的灵光一现。记录的瞬间，就是下载智慧的关键契机。\n\n真正的智慧来源于不加思索的灵光一现（人的顿悟、AI的啊哈时刻）。而你记录的瞬间，就是你下载智",
+            "file_path": "02-Knowledge/Wisdom/真正的智慧从何而来.md",
+            "type": "original",
+            "wiki_links": [
+                "从道理之争到智慧之境",
+                "沟通的艺术如何让道理被真正听见"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "从道理之争到智慧之境",
+                    "reason": "智慧"
+                },
+                {
+                    "title": "沟通的艺术如何让道理被真正听见",
+                    "reason": "智慧"
+                }
+            ],
+            "connections": 2
+        },
+        {
+            "id": 10,
+            "label": "这个世界最大的悲剧是什么",
+            "group": "Knowledge",
+            "tooltip": "# 这个世界最大的悲剧是什么\n\n> 最大的悲剧不是苦难本身，而是对苦难的理解缺失。理解苦难的意义，悲剧就转化为成长。\n\n这个世界最大的悲剧莫过于：\n\n最有资格抱怨\"生活是苦难\"的人，只有婴儿，可惜他",
+            "file_path": "02-Knowledge/Wisdom/这个世界最大的悲剧是什么.md",
+            "type": "original",
+            "wiki_links": [
+                "沟通的艺术如何让道理被真正听见",
+                "从道理之争到智慧之境"
+            ],
+            "wikiLinks": [
+                {
+                    "title": "沟通的艺术如何让道理被真正听见",
+                    "reason": "表达悖论"
+                },
+                {
+                    "title": "从道理之争到智慧之境",
+                    "reason": "理解与智慧"
+                }
+            ],
+            "connections": 2
+        }
+    ],
+    "edges": [
+        {
+            "from": 3,
+            "to": 5,
+            "type": "wiki-link"
+        },
+        {
+            "from": 4,
+            "to": 8,
+            "type": "wiki-link"
+        },
+        {
+            "from": 4,
+            "to": 9,
+            "type": "wiki-link"
+        },
+        {
+            "from": 5,
+            "to": 3,
+            "type": "wiki-link"
+        },
+        {
+            "from": 6,
+            "to": 3,
+            "type": "wiki-link"
+        },
+        {
+            "from": 6,
+            "to": 5,
+            "type": "wiki-link"
+        },
+        {
+            "from": 7,
+            "to": 3,
+            "type": "wiki-link"
+        },
+        {
+            "from": 7,
+            "to": 5,
+            "type": "wiki-link"
+        },
+        {
+            "from": 8,
+            "to": 4,
+            "type": "wiki-link"
+        },
+        {
+            "from": 8,
+            "to": 9,
+            "type": "wiki-link"
+        },
+        {
+            "from": 9,
+            "to": 4,
+            "type": "wiki-link"
+        },
+        {
+            "from": 9,
+            "to": 8,
+            "type": "wiki-link"
+        },
+        {
+            "from": 10,
+            "to": 8,
+            "type": "wiki-link"
+        },
+        {
+            "from": 10,
+            "to": 4,
+            "type": "wiki-link"
+        }
+    ]
+};
         // ======================================================
         
         let currentNodes, currentEdges, network;
@@ -701,6 +1039,44 @@
             document.getElementById('nodeCategory').style.color = getContrastColor(bgColor);
             document.getElementById('nodeCategory').style.border = '1px solid ' + borderColor;
             document.getElementById('nodePreview').textContent = node.tooltip;
+            
+            // 处理 Wiki 链接显示
+            const wikiSection = document.getElementById('nodeWikiLinks');
+            const wikiList = document.getElementById('wikiLinksList');
+            
+            // 清空之前的 Wiki 链接
+            wikiList.innerHTML = '';
+            
+            // 如果节点有 wikiLinks 数据
+            if (node.wikiLinks && node.wikiLinks.length > 0) {
+                wikiSection.classList.add('has-links');
+                
+                node.wikiLinks.forEach(link => {
+                    const linkItem = document.createElement('div');
+                    linkItem.className = 'wiki-link-item';
+                    linkItem.innerHTML = `
+                        <span class="wiki-link-icon">→</span>
+                        <span class="wiki-link-title">${link.title}</span>
+                        <span class="wiki-link-reason">${link.reason || ''}</span>
+                    `;
+                    linkItem.onclick = () => {
+                        // 点击 Wiki 链接时跳转到该节点
+                        const targetNode = currentNodes.get().find(n => n.label === link.title);
+                        if (targetNode) {
+                            network.focus(targetNode.id, { animation: true });
+                            showNodeDetails(targetNode);
+                        } else {
+                            // 如果目标节点不在图谱中，尝试在 Obsidian 中打开
+                            const encodedPath = encodeURIComponent(link.title + '.md');
+                            const obsidianUrl = `obsidian://open?vault=${OBSIDIAN_VAULT_NAME}&file=${encodedPath}`;
+                            window.location.href = obsidianUrl;
+                        }
+                    };
+                    wikiList.appendChild(linkItem);
+                });
+            } else {
+                wikiSection.classList.remove('has-links');
+            }
             
             // 恢复底部按钮显示（普通节点详情需要按钮）
             document.querySelector('.modal-actions').style.display = 'flex';
