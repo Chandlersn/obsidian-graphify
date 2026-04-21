@@ -13,15 +13,20 @@ Wiki 链接自动建立脚本 v2.2
 import os
 import re
 import sys
+import yaml
 from collections import Counter
 
 # ==================== 配置 ====================
-DEFAULT_VAULT = "/mnt/d/obsidian-notes"
+DEFAULT_VAULT = os.environ.get("OBSIDIAN_VAULT_PATH", "/mnt/d/obsidian-notes")
+CONFIG_PATH = os.environ.get(
+    "GRAPHIFY_CONFIG_PATH",
+    os.path.join(DEFAULT_VAULT, ".graphify", "github-repo", "config", "config.yaml")
+)
 MIN_MATCH_COUNT = 2
 MAX_LINKS = 8
 
-# 语义匹配规则
-SEMANTIC_GROUPS = {
+# 默认语义匹配规则（config.yaml 加载失败时备用）
+DEFAULT_SEMANTIC_GROUPS = {
     '智慧': ['智慧', '道理', '开窍', '顿悟'],
     '认知': ['认知', '体系', '转变', '开窍'],
     '创造力': ['创造力', '创造'],
@@ -31,6 +36,24 @@ SEMANTIC_GROUPS = {
     '生命': ['生命', '活着', '死亡'],
     '哲学': ['哲学', '思考', '反思'],
 }
+
+def load_semantic_groups():
+    """从 config.yaml 加载语义匹配规则"""
+    try:
+        if os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+                if config and 'semantic_groups' in config:
+                    groups = {}
+                    for name, group_config in config['semantic_groups'].items():
+                        groups[name] = group_config.get('keywords', [])
+                    return groups
+    except Exception as e:
+        print(f"[Warning] Failed to load config.yaml: {e}, using default rules")
+
+    return DEFAULT_SEMANTIC_GROUPS
+
+SEMANTIC_GROUPS = load_semantic_groups()
 # ==============================================
 
 def extract_keywords(content):
@@ -41,7 +64,9 @@ def extract_keywords(content):
     title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
     if title_match:
         title = title_match.group(1)
-        title_keywords = re.findall(r'[知识|图谱|系统|Agent|技能|笔记|认知|智慧|时间|沟通|创造|哲学][图谱|系统|技能|笔记|脉络|链接|统计|分析]*', title)
+        title_keywords = re.findall(r'(知识|图谱|系统|Agent|技能|笔记|认知|智慧|时间|沟通|创造|哲学)(图谱|系统|技能|笔记|脉络|链接|统计|分析)*', title)
+        # 将匹配的元组合并为完整词
+        title_keywords = [g[0] + (g[1] if g[1] else '') for g in title_keywords]
         keywords.extend([k for k in title_keywords if len(k) >= 2])
     
     # 2. 从 tags 字段提取（支持两种格式）

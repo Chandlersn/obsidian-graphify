@@ -18,9 +18,13 @@ from datetime import datetime
 from pathlib import Path
 
 # ==================== 配置 ====================
-VAULT_PATH = "/mnt/d/obsidian-notes"
+# 支持环境变量配置，默认值用于向后兼容
+VAULT_PATH = os.environ.get("OBSIDIAN_VAULT_PATH", "/mnt/d/obsidian-notes")
 GRAPHIFY_DIR = os.path.join(VAULT_PATH, ".graphify")
-CONFIG_PATH = os.path.join(GRAPHIFY_DIR, "github-repo", "config", "config.yaml")
+CONFIG_PATH = os.environ.get(
+    "GRAPHIFY_CONFIG_PATH",
+    os.path.join(GRAPHIFY_DIR, "github-repo", "config", "config.yaml")
+)
 
 # 默认分类规则（向后兼容）
 DEFAULT_CATEGORY_RULES = {
@@ -254,11 +258,15 @@ class NoteCollector:
         )
         
         filepath = self.get_save_path(title, category, subcategory)
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(note)
-        
-        print(f"✅ 笔记已保存: {filepath}")
+
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(note)
+            print(f"✅ 笔记已保存: {filepath}")
+        except IOError as e:
+            print(f"❌ 保存笔记失败: {filepath}")
+            print(f"   错误: {e}")
+            raise
         
         return filepath, category, subcategory
     

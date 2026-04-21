@@ -1,187 +1,62 @@
-# Graphify 配置文件
+# Graphify 配置文件 v2.3
+# wiki_link_builder.py 和 note_collector.py 共用
 
-# ==================== Obsidian Vault ====================
-obsidian:
-  # 你的 Obsidian vault 路径
-  vault_path: "/mnt/d/obsidian-notes"
-  
-  # 是否启用自动更新
-  auto_update: true
+# 语义匹配规则（用于 wiki_link_builder.py）
+semantic_groups:
+  智慧:
+    keywords: [智慧, 道理, 开窍, 顿悟]
+  认知:
+    keywords: [认知, 体系, 转变, 开窍]
+  创造力:
+    keywords: [创造力, 创造]
+  时间:
+    keywords: [时间, 意识, 精神]
+  沟通:
+    keywords: [沟通, 道理, 包装]
+  悲剧:
+    keywords: [悲剧, 苦难, 表达]
+  生命:
+    keywords: [生命, 活着, 死亡]
+  哲学:
+    keywords: [哲学, 思考, 反思]
 
-# ==================== 图谱设置 ====================
-graph:
-  # 主题: dark / light
-  theme: "dark"
-  
-  # 主色调（Linear 风格）
-  primary_color: "#5e6ad2"
-  
-  # 节点标签最大长度
-  max_label_length: 12
-  
-  # 分类颜色映射
-  colors:
-    System: "#f7f8f8"
-    Knowledge: "#5e6ad2"
-    Projects: "#4DAF73"
-    Materials: "#E6A23C"
-    General: "#909399"
-    AI-ML: "#5e6ad2"
-    Architecture: "#409EFF"
-    Tools: "#67C23A"
-
-# ==================== 自动更新 ====================
-update:
-  # 是否启用自动更新守护进程
-  enabled: true
-  
-  # 更新间隔（秒，防抖）
-  interval: 3
-  
-  # 监控的文件类型
-  file_types:
-    - ".md"
-
-# ==================== 飞书集成 ====================
-feishu:
-  # 是否启用飞书消息导入
-  enabled: false
-  
-  # 飞书 API Token（建议用环境变量）
-  # token: "YOUR_TOKEN"
-  
-  # 保存目录（相对于 vault）
-  save_dir: "04-Materials/Feishu"
-
-# ==================== 功能开关 ====================
-features:
-  # 篮选分类
-  filter: true
-  
-  # 路径追踪
-  path_tracing: true
-  
-  # 留度统计
-  heat_map: true
-  
-  # 影响力分析
-  influence: true
-  
-  # 孤岛检测
-  island_detection: true
-  
-  # PNG 导出
-  export_png: true
-
-# ==================== 分类规则 ====================
-# 定义笔记自动分类的关键词匹配规则
+# 分类规则（用于 note_collector.py）
 categories:
   Knowledge:
-    keywords:
-      - "知识"
-      - "概念"
-      - "原理"
-      - "方法"
-      - "技巧"
-      - "理论"
-      - "AI"
-      - "LLM"
-      - "架构"
-      - "设计"
+    keywords: [知识, 概念, 原理, 方法, 技巧, 理论, AI, LLM, 架构, 设计]
     subcategories:
       Wisdom:
-        keywords:
-          - "智慧"
-          - "认知"
-          - "哲学"
-          - "思考"
-          - "道理"
-          - "人生"
-          - "顿悟"
-          - "开窍"
+        keywords: [智慧, 认知, 哲学, 思考, 道理, 人生, 顿悟]
       AI-ML:
-        keywords:
-          - "AI"
-          - "机器学习"
-          - "LLM"
-          - "模型"
-          - "Agent"
-          - "神经网络"
+        keywords: [AI, 机器学习, LLM, 模型, Agent, 神经网络]
       Architecture:
-        keywords:
-          - "架构"
-          - "系统设计"
-          - "分布式"
-          - "微服务"
+        keywords: [架构, 系统设计, 分布式, 微服务]
       Tools:
-        keywords:
-          - "工具"
-          - "技巧"
-          - "Obsidian"
-          - "Git"
-          - "Python"
+        keywords: [工具, 技巧, Obsidian, Git, Python]
       Research:
-        keywords:
-          - "研究"
-          - "论文"
-          - "实验"
-          - "方法论"
-  
+        keywords: [研究, 论文, 实验, 方法论]
   Projects:
-    keywords:
-      - "项目"
-      - "开发"
-      - "实现"
-      - "集成"
-      - "部署"
-      - "Graphify"
-      - "Hermes"
+    keywords: [项目, 开发, 实现, 集成, 部署, Graphify, Hermes]
     subcategories:
       Graphify:
-        keywords:
-          - "Graphify"
-          - "图谱"
-          - "知识图谱"
+        keywords: [Graphify, 图谱, 知识图谱]
       Hermes-Agent:
-        keywords:
-          - "Hermes"
-          - "Agent"
-          - "飞书"
+        keywords: [Hermes, Agent, 飞书]
       Integration:
-        keywords:
-          - "集成"
-          - "对接"
-          - "API"
-  
+        keywords: [集成, 对接, API]
   Materials:
     keywords: []
     subcategories:
       Articles:
-        keywords:
-          - "文章"
-          - "收藏"
+        keywords: [文章, 收藏]
       Feishu:
-        keywords:
-          - "飞书"
+        keywords: [飞书]
       References:
-        keywords:
-          - "参考"
-          - "API文档"
-  
+        keywords: [参考, API文档]
   System:
-    keywords:
-      - "系统"
-      - "配置"
-      - "核心"
-      - "设计理念"
-      - "SOUL"
+    keywords: [系统, 配置, 核心, 设计理念, SOUL]
     subcategories:
       Core:
-        keywords:
-          - "核心"
-          - "SOUL"
-          - "设计理念"
+        keywords: [核心, SOUL, 设计理念]
       Config:
-        keywords:
-          - "配置"
-          - "技能"
+        keywords: [配置, 技能]
