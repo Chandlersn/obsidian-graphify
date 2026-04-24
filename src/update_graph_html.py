@@ -88,6 +88,11 @@ def get_note_category(file_path, vault_path):
     
     if len(parts) >= 2:
         category = parts[0]
+        
+        # 特殊处理：Wisdom 目录单独分组（哲学精华观点）
+        if len(parts) >= 3 and parts[0] == '02-Knowledge' and parts[1] == 'Wisdom':
+            return 'Wisdom'
+        
         # 映射分类名
         category_map = {
             '01-System': 'System',
