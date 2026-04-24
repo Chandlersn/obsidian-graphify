@@ -43,7 +43,7 @@
 
 ***
 
-## v2.2.0 新特性
+## v2.4.0 新特性
 
 ### 🚀 自动化收录流程
 
@@ -100,6 +100,30 @@ tags: ["标签1", "标签2"]
 python3 skills/scripts/wiki_link_builder.py "/path/to/note.md"
 ```
 
+### 🏝️ 知识孤岛检测
+
+找出无 Wiki 链接的笔记，并基于关键词建议可能的连接：
+
+```bash
+python3 skills/scripts/island_detector.py "/path/to/vault" --suggest
+```
+
+### 📋 笔记质量检查
+
+检查 YAML frontmatter 完整性和格式规范性：
+
+```bash
+python3 skills/scripts/quality_checker.py "/path/to/vault"
+```
+
+### 🕸️ 图谱网络分析
+
+分析笔记网络的中心性、桥梁节点和知识簇：
+
+```bash
+python3 skills/scripts/graph_analyzer.py "/path/to/vault"
+```
+
 ***
 
 ## 为什么做这个
@@ -134,7 +158,7 @@ python3 skills/scripts/wiki_link_builder.py "/path/to/note.md"
 
 ***
 
-## 14 个核心功能
+## 17 个核心功能
 
 | # | 功能 | 说明 |
 | :- | :---------- | :-------------------------- |
@@ -152,6 +176,9 @@ python3 skills/scripts/wiki_link_builder.py "/path/to/note.md"
 | 12 | **自动更新** | watchdog 监控，实时同步图谱 |
 | 13 | **自动化收录** | 一键完成收录全流程 |
 | 14 | **Wiki 链接建立** | 自动关联相关笔记 |
+| 15 | **孤岛检测工具** | 命令行检测无连接笔记并建议连接 |
+| 16 | **质量检查工具** | 检查 YAML 完整性和格式规范 |
+| 17 | **图谱分析工具** | 分析中心性、桥梁节点、知识簇 |
 
 ***
 
@@ -252,11 +279,14 @@ obsidian-graphify/
 ├── scripts/
 │   └ install.sh           # 安装脚本
 ├── skills/
-│   ├── SKILL.md           # Agent Skill 定义 v2.2
+│   ├── SKILL.md           # Agent Skill 定义 v2.4
 │   └ scripts/
 │       ├── note_collector.py    # 核心收录脚本
 │       ├── wiki_link_builder.py # Wiki 链接建立
 │       ├── update_graph_html.py # 图谱生成
+│       ├── island_detector.py   # 孤岛检测
+│       ├── quality_checker.py   # 质量检查
+│       ├── graph_analyzer.py    # 图谱分析
 │       └ graphify.sh           # 快捷入口
 └── src/
     ├── graph.html         # 图谱页面
@@ -354,6 +384,7 @@ MIT License — 自由使用、修改、分发。
 
 | 版本 | 日期 | 核心更新 |
 | :--- | :--- | :------- |
+| **v2.4.0** | 2026-04-24 | 孤岛检测、质量检查、图谱分析工具、Wisdom金色分组 |
 | **v2.2.0** | 2026-04-19 | 弹窗Wiki链接显示、模板同步更新 |
 | **v2.1.0** | 2026-04-19 | 修复代码截断、补全graphify.sh、分类规则配置化、demo_notes完善 |
 | **v2.0.0** | 2026-04-16 | 简化模板格式、自动化收录流程、Wiki链接自动建立 |
