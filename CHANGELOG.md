@@ -7,7 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2026-04-19
+## [2.5.0] - 2026-05-02
+
+**Batch optimization & Knowledge network expansion.**
+
+### Highlights
+
+**批量优化成果**：8篇哲学文档完成质量优化，平均提升8.6分，达到92-95分标准。
+
+|| 文档标题 | 原始评分 | 优化后评分 | 提升幅度 ||
+||---------|---------|-----------|---------||
+|| 沟通的艺术 | 84 | 95 | +11 ||
+|| 别再囤知识了 | 78 | 92 | +14 ||
+|| 这个世界最大的悲剧 | 82 | 93 | +11 ||
+|| 人的认知转变 | 89 | 94 | +5 ||
+|| 真正的智慧从何而来 | 87 | 93 | +6 ||
+|| 创造力如何才能拥有 | 86 | 93 | +7 ||
+|| 你的认知体系 | 84 | 92 | +8 ||
+|| 客观时间与意识时间 | 85 | 92 | +7 ||
+
+### Knowledge Network Growth
+
+- **知识节点**: 18 → 38 (+111%)
+- **Wiki连接**: 22 → 100 (+355%)
+- **健康度**: 65.8% healthy notes
+- **知识密度**: 平均每个节点有 2.6 个连接
+
+### Quality Standards Established
+
+**开头格式标准化**：
+```
+引用块（3句话）→ 提点性描述 → 总结性点睛 → 数据震撼 → 两问题揭示
+```
+
+**质量评分标准**：
+- 数据支撑密度
+- 哲学洞察犀利度
+- 语言简洁力
+- 论证层层深入度
+- 情感共鸣真实度
+
+### Documentation Updates
+
+- `index.md` → v1.1 (批量优化成果版)
+- `SOUL-定位说明.md` → v1.1
+- `笔记指南与创作方法论.md` → v1.1
+- 新增 `README.md` (笔记系统总览)
+
+### Technical Improvements
+
+- Wiki链接重建流程优化
+- 知识图谱可视化更新
+- 备份文件清理机制
+
+---
+
+## [2.4.0] - 2026-04-24
+
+**Island detection, quality tools, and graph analysis.**
 
 **Repository maintenance and fixes.**
 
