@@ -320,8 +320,7 @@ obsidian-notes/
 │   └── 04-项目工作/              # 待填充
 │
 └── .graphify/                    # 知识图谱可视化
-    ├── graph.html                # 交互式知识网络
-    └── github-repo/              # Graphify开源仓库
+    └── graph.html                # 交互式知识网络
 ```
 
 ### 核心设计理念
